@@ -1,0 +1,330 @@
+[
+  {
+    "line_ref": "1",
+    "line_name": "Chilanzor Line: Chinor => Buyuk Ipak Yoli",
+    "color_hex": "red",
+    "stations": [
+      {
+        "sequence": 0,
+        "station_name": "Chinara",
+        "station_osm_id": "node/10538244120",
+        "distance_to_next_m": 863
+      },
+      {
+        "sequence": 1,
+        "station_name": "Yangihayot",
+        "station_osm_id": "node/10538244119",
+        "distance_to_next_m": 903
+      },
+      {
+        "sequence": 2,
+        "station_name": "Sergeli",
+        "station_osm_id": "way/888864488",
+        "distance_to_next_m": 849
+      },
+      {
+        "sequence": 3,
+        "station_name": "Uzgarish",
+        "station_osm_id": "node/10538244113",
+        "distance_to_next_m": 1383
+      },
+      {
+        "sequence": 4,
+        "station_name": "Chashtepa",
+        "station_osm_id": "node/10538244112",
+        "distance_to_next_m": 2049
+      },
+      {
+        "sequence": 5,
+        "station_name": "Almazar (Sabir Rakhimov)",
+        "station_osm_id": "node/1777845992",
+        "distance_to_next_m": 2102
+      },
+      {
+        "sequence": 6,
+        "station_name": "Chilanzar",
+        "station_osm_id": "node/854338154",
+        "distance_to_next_m": 1064
+      },
+      {
+        "sequence": 7,
+        "station_name": "Mirzo Ulugbek (50 years USSR)",
+        "station_osm_id": "node/852873027",
+        "distance_to_next_m": 1430
+      },
+      {
+        "sequence": 8,
+        "station_name": "Novza (Hamza)",
+        "station_osm_id": "way/1456526444",
+        "distance_to_next_m": 1630
+      },
+      {
+        "sequence": 9,
+        "station_name": "Milliy Bog (Komsomolskaya)",
+        "station_osm_id": "node/1252201486",
+        "distance_to_next_m": 1131
+      },
+      {
+        "sequence": 10,
+        "station_name": "Drujba Narodov",
+        "station_osm_id": "node/568770460",
+        "distance_to_next_m": 1197
+      },
+      {
+        "sequence": 11,
+        "station_name": "Pakhtakor",
+        "station_osm_id": "node/1777740154",
+        "distance_to_next_m": 1371
+      },
+      {
+        "sequence": 12,
+        "station_name": "Mustaqillik maydoni",
+        "station_osm_id": "node/1778357473",
+        "distance_to_next_m": 1050
+      },
+      {
+        "sequence": 13,
+        "station_name": "Amir Timur Square",
+        "station_osm_id": "node/1777051509",
+        "distance_to_next_m": 1207
+      },
+      {
+        "sequence": 14,
+        "station_name": "Hamid Alimjan",
+        "station_osm_id": "node/1775848270",
+        "distance_to_next_m": 1350
+      },
+      {
+        "sequence": 15,
+        "station_name": "Pushkin",
+        "station_osm_id": "node/1777037922",
+        "distance_to_next_m": 1529
+      },
+      {
+        "sequence": 16,
+        "station_name": "Buyuk Ipak Yuli (Maxim Gorky)",
+        "station_osm_id": "node/1777037919",
+        "distance_to_next_m": null
+      }
+    ]
+  },
+  {
+    "line_ref": "2",
+    "line_name": "Oʻzbekiston Line: Beruniy - Dustlik",
+    "color_hex": "blue",
+    "stations": [
+      {
+        "sequence": 0,
+        "station_name": "Beruniy",
+        "station_osm_id": "node/1631211328",
+        "distance_to_next_m": 1743
+      },
+      {
+        "sequence": 1,
+        "station_name": "Tinchlik",
+        "station_osm_id": "node/1770328496",
+        "distance_to_next_m": 1642
+      },
+      {
+        "sequence": 2,
+        "station_name": "Chorsu",
+        "station_osm_id": "node/1577932485",
+        "distance_to_next_m": 786
+      },
+      {
+        "sequence": 3,
+        "station_name": "Gafur Gulyam",
+        "station_osm_id": "node/1539317100",
+        "distance_to_next_m": 1222
+      },
+      {
+        "sequence": 4,
+        "station_name": "Alisher Navoiy",
+        "station_osm_id": "node/1777740153",
+        "distance_to_next_m": 779
+      },
+      {
+        "sequence": 5,
+        "station_name": "Uzbekistan",
+        "station_osm_id": "node/1777744035",
+        "distance_to_next_m": 1209
+      },
+      {
+        "sequence": 6,
+        "station_name": "Cosmonauts",
+        "station_osm_id": "node/1775892797",
+        "distance_to_next_m": 1113
+      },
+      {
+        "sequence": 7,
+        "station_name": "Aybek",
+        "station_osm_id": "node/1579080941",
+        "distance_to_next_m": 1257
+      },
+      {
+        "sequence": 8,
+        "station_name": "Tashkent",
+        "station_osm_id": "node/1582352956",
+        "distance_to_next_m": 1586
+      },
+      {
+        "sequence": 9,
+        "station_name": "Mashinasozlar (Tashselmash)",
+        "station_osm_id": "node/1765133546",
+        "distance_to_next_m": 1549
+      },
+      {
+        "sequence": 10,
+        "station_name": "Dustlik (Chkalov)",
+        "station_osm_id": "node/1777856012",
+        "distance_to_next_m": null
+      }
+    ]
+  },
+  {
+    "line_ref": "3",
+    "line_name": "Yunusobod Line: Turkiston - Ming Orik",
+    "color_hex": "green",
+    "stations": [
+      {
+        "sequence": 0,
+        "station_name": "Turkistan",
+        "station_osm_id": "node/7861940928",
+        "distance_to_next_m": 1227
+      },
+      {
+        "sequence": 1,
+        "station_name": "Yunusabad",
+        "station_osm_id": "node/7053509943",
+        "distance_to_next_m": 1566
+      },
+      {
+        "sequence": 2,
+        "station_name": "Shahristan",
+        "station_osm_id": "node/1633822600",
+        "distance_to_next_m": 1798
+      },
+      {
+        "sequence": 3,
+        "station_name": "Badamzar",
+        "station_osm_id": "node/1775804030",
+        "distance_to_next_m": 1147
+      },
+      {
+        "sequence": 4,
+        "station_name": "Minor",
+        "station_osm_id": "node/1772595534",
+        "distance_to_next_m": 758
+      },
+      {
+        "sequence": 5,
+        "station_name": "Abdulla Qodirii",
+        "station_osm_id": "node/1772575475",
+        "distance_to_next_m": 716
+      },
+      {
+        "sequence": 6,
+        "station_name": "Yunus Rajabiy",
+        "station_osm_id": "node/1777051512",
+        "distance_to_next_m": 1755
+      },
+      {
+        "sequence": 7,
+        "station_name": "Ming Urik",
+        "station_osm_id": "node/1579080943",
+        "distance_to_next_m": null
+      }
+    ]
+  },
+  {
+    "line_ref": "4",
+    "line_name": "Circle Line: Kipchak - Technopark",
+    "color_hex": "#9933FF",
+    "stations": [
+      {
+        "sequence": 0,
+        "station_name": "Kipchak",
+        "station_osm_id": "node/11218653778",
+        "distance_to_next_m": 1216
+      },
+      {
+        "sequence": 1,
+        "station_name": "Turan",
+        "station_osm_id": "node/11218653779",
+        "distance_to_next_m": 2518
+      },
+      {
+        "sequence": 2,
+        "station_name": "Kuruvchilar (Stroiteley)",
+        "station_osm_id": "node/10637629352",
+        "distance_to_next_m": 1248
+      },
+      {
+        "sequence": 3,
+        "station_name": "Khanabad",
+        "station_osm_id": "node/10637629351",
+        "distance_to_next_m": 2019
+      },
+      {
+        "sequence": 4,
+        "station_name": "Talaryk",
+        "station_osm_id": "node/10538303447",
+        "distance_to_next_m": 1235
+      },
+      {
+        "sequence": 5,
+        "station_name": "Qiyot",
+        "station_osm_id": "node/10537931295",
+        "distance_to_next_m": 719
+      },
+      {
+        "sequence": 6,
+        "station_name": "Matonat",
+        "station_osm_id": "node/10537931294",
+        "distance_to_next_m": 1746
+      },
+      {
+        "sequence": 7,
+        "station_name": "Kuylyuk",
+        "station_osm_id": "node/10537927083",
+        "distance_to_next_m": 3394
+      },
+      {
+        "sequence": 8,
+        "station_name": "Yangiabad",
+        "station_osm_id": "node/10537927082",
+        "distance_to_next_m": 1099
+      },
+      {
+        "sequence": 9,
+        "station_name": "Rakhat",
+        "station_osm_id": "node/10537927081",
+        "distance_to_next_m": 1862
+      },
+      {
+        "sequence": 10,
+        "station_name": "Almas",
+        "station_osm_id": "node/9972711745",
+        "distance_to_next_m": 1197
+      },
+      {
+        "sequence": 11,
+        "station_name": "Tuzel",
+        "station_osm_id": "node/10537927080",
+        "distance_to_next_m": 819
+      },
+      {
+        "sequence": 12,
+        "station_name": "Yashnabad",
+        "station_osm_id": "node/10537927079",
+        "distance_to_next_m": 2246
+      },
+      {
+        "sequence": 13,
+        "station_name": "Technopark",
+        "station_osm_id": "node/10537927077",
+        "distance_to_next_m": null
+      }
+    ]
+  }
+]

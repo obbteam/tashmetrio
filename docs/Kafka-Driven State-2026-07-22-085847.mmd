@@ -1,0 +1,48 @@
+
+flowchart TB
+    SIM["Simulator (dev)<br/>/ Real ATS feed (future)"]
+
+    subgraph ING["Ingestion Service (deployable)"]
+        INGAPP["Resolves raw signal → topology<br/>(line, segment, direction, progress_pct)<br/>Validates, publishes clean events"]
+    end
+
+    TOPODB[("Topology DB<br/>Postgres/PostGIS<br/>Line, Station, LineStation")]
+
+    subgraph KAFKA["Kafka"]
+        T1["train.positions<br/>(key: train_id)"]
+        T2["network.alerts<br/>(key: incident_id)"]
+    end
+
+    subgraph SC["State Consumer (deployable)"]
+        SCAPP["Consumes Kafka<br/>Writes current-state snapshot<br/>(+ ETA recalculation on incidents)"]
+    end
+
+    REDIS[("Redis<br/>current-state cache<br/>train:{id} → position/segment<br/>line:{id} → active incidents")]
+
+    subgraph WS["WebSocket Gateway (deployable)"]
+        WSAPP["Snapshot-on-connect from Redis<br/>Live deltas from Kafka/Redis pub-sub<br/>Fans out to browsers"]
+    end
+
+    subgraph QAPI["Query API (deployable, or bundled)"]
+        QAPP["HTTP reads:<br/>lines, stations, line geometry"]
+    end
+
+    CLIENT["Frontend<br/>React + MapLibre"]
+
+    SIM -->|"raw position/status"| INGAPP
+    TOPODB <-->|"read topology"| INGAPP
+    INGAPP -->|"publish"| T1
+    INGAPP -->|"publish"| T2
+
+    T1 -->|"consume"| SCAPP
+    T2 -->|"consume"| SCAPP
+    SCAPP -->|"write snapshot"| REDIS
+
+    REDIS -->|"read snapshot on connect"| WSAPP
+    T1 -.->|"live deltas (or via Redis pub/sub)"| WSAPP
+    T2 -.->|"live deltas (or via Redis pub/sub)"| WSAPP
+
+    TOPODB <-->|"read topology"| QAPP
+
+    WSAPP ==>|"WebSocket: positions, alerts"| CLIENT
+    QAPP ==>|"HTTP: static topology"| CLIENT

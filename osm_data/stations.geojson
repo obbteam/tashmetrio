@@ -1,0 +1,719 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2236165,
+          41.2918722
+        ]
+      },
+      "properties": {
+        "osm_id": "node/563751850",
+        "name": "Novza (Hamza)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2430959,
+          41.3118987
+        ]
+      },
+      "properties": {
+        "osm_id": "node/568770460",
+        "name": "Drujba Narodov"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2125834,
+          41.2820342
+        ]
+      },
+      "properties": {
+        "osm_id": "node/852873027",
+        "name": "Mirzo Ulugbek (50 years USSR)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2049735,
+          41.274359
+        ]
+      },
+      "properties": {
+        "osm_id": "node/854338154",
+        "name": "Chilanzar"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2356663,
+          41.3033944
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1252201486",
+        "name": "Milliy Bog (Komsomolskaya)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2458342,
+          41.3278828
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1539317100",
+        "name": "Gafur Gulyam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2368152,
+          41.3258649
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1577932485",
+        "name": "Chorsu"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2740501,
+          41.2980128
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1579080941",
+        "name": "Aybek"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2744102,
+          41.299661
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1579080943",
+        "name": "Ming Urik"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2877212,
+          41.2932886
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1582352956",
+        "name": "Tashkent"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2062046,
+          41.3446152
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1631211328",
+        "name": "Beruniy"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2881069,
+          41.3531185
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1633822600",
+        "name": "Shahristan"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3051276,
+          41.2989847
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1765133546",
+        "name": "Mashinasozlar (Tashselmash)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2191155,
+          41.3323014
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1770328496",
+        "name": "Tinchlik"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.281759,
+          41.3201924
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1772575475",
+        "name": "Abdulla Qodirii"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2834163,
+          41.3268923
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1772595534",
+        "name": "Minor"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2845697,
+          41.3371701
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1775804030",
+        "name": "Badamzar"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2957419,
+          41.3181644
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1775848270",
+        "name": "Hamid Alimjan"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2647207,
+          41.3051618
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1775892797",
+        "name": "Cosmonauts"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3285598,
+          41.3261054
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777037919",
+        "name": "Buyuk Ipak Yuli (Maxim Gorky)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.311102,
+          41.3219481
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777037922",
+        "name": "Pushkin"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2832691,
+          41.3126738
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777051509",
+        "name": "Amir Timur Square"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2835077,
+          41.3138871
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777051512",
+        "name": "Yunus Rajabiy"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2542973,
+          41.3189218
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777740153",
+        "name": "Alisher Navoiy"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2550882,
+          41.3177914
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777740154",
+        "name": "Pakhtakor"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2534057,
+          41.3119437
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777744035",
+        "name": "Uzbekistan"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.1961045,
+          41.2566724
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777845992",
+        "name": "Almazar (Sabir Rakhimov)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3222445,
+          41.2936401
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1777856012",
+        "name": "Dustlik (Chkalov)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2710646,
+          41.3149453
+        ]
+      },
+      "properties": {
+        "osm_id": "node/1778357473",
+        "name": "Mustaqillik maydoni"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2923003,
+          41.3668411
+        ]
+      },
+      "properties": {
+        "osm_id": "node/7053509943",
+        "name": "Yunusabad"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2960151,
+          41.3775217
+        ]
+      },
+      "properties": {
+        "osm_id": "node/7861940928",
+        "name": "Turkistan"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3603338,
+          41.281705
+        ]
+      },
+      "properties": {
+        "osm_id": "node/9972711745",
+        "name": "Almas"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3231867,
+          41.294628
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10537927077",
+        "name": "Technopark"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3497831,
+          41.2975859
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10537927079",
+        "name": "Yashnabad"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3561844,
+          41.2920125
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10537927080",
+        "name": "Tuzel"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3647517,
+          41.2652907
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10537927081",
+        "name": "Rakhat"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3587242,
+          41.2565075
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10537927082",
+        "name": "Yangiabad"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3270001,
+          41.2374579
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10537927083",
+        "name": "Kuylyuk"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.3083229,
+          41.2444713
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10537931294",
+        "name": "Matonat"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.299728,
+          41.2444796
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10537931295",
+        "name": "Qiyot"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.1960345,
+          41.2382496
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10538244112",
+        "name": "Chashtepa"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2039714,
+          41.2273364
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10538244113",
+        "name": "Uzgarish"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.214015,
+          41.2135099
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10538244119",
+        "name": "Yangihayot"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2189575,
+          41.2066965
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10538244120",
+        "name": "Chinara"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2849568,
+          41.2445139
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10538303447",
+        "name": "Talaryk"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2704353,
+          41.2300103
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10637629351",
+        "name": "Khanabad"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2605033,
+          41.2216367
+        ]
+      },
+      "properties": {
+        "osm_id": "node/10637629352",
+        "name": "Kuruvchilar (Stroiteley)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2214112,
+          41.2054229
+        ]
+      },
+      "properties": {
+        "osm_id": "node/11218653778",
+        "name": "Kipchak"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.234154,
+          41.2106813
+        ]
+      },
+      "properties": {
+        "osm_id": "node/11218653779",
+        "name": "Turan"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2088382,
+          41.2206379
+        ]
+      },
+      "properties": {
+        "osm_id": "way/888864488",
+        "name": "Sergeli"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          69.2236185,
+          41.2918685
+        ]
+      },
+      "properties": {
+        "osm_id": "way/1456526444",
+        "name": "Novza (Hamza)"
+      }
+    }
+  ]
+}

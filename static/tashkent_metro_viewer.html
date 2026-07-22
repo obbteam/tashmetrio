@@ -1,0 +1,482 @@
+<style>
+  :root {
+    --bg: #0a0c10;
+    --panel: #12151c;
+    --panel-border: #1f242f;
+    --text: #e7e9ee;
+    --text-dim: #838a99;
+    --text-faint: #4d5361;
+    --accent: #ffb454;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+  #app { display: flex; height: 100vh; width: 100vw; }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar {
+    width: 300px; flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--panel-border);
+    display: flex; flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  #sidebar h1 {
+    font-size: 15px; font-weight: 600; letter-spacing: 0.02em;
+    margin: 0 0 2px 0; color: var(--text);
+  }
+  #sidebar .subtitle {
+    font-size: 12px; color: var(--text-dim); margin-bottom: 20px;
+  }
+  .drop-zone {
+    border: 1px dashed var(--panel-border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .drop-zone.ready { border-color: #2d6a4f; color: #6fcf97; background: #0e1a15; }
+  .drop-zone.drag-over { border-color: var(--accent); background: #1a1712; }
+  .drop-zone label {
+    display: block; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-faint); margin-bottom: 6px;
+  }
+  .drop-zone input[type=file] {
+    font-size: 11px; color: var(--text-dim); width: 100%;
+  }
+  #status {
+    font-size: 12px; color: var(--text-dim); margin: 14px 0 20px 0;
+    padding: 10px; background: #0d1017; border-radius: 6px;
+    border: 1px solid var(--panel-border); line-height: 1.5;
+    min-height: 20px;
+  }
+  #stats-bar {
+    display: flex; gap: 10px; margin: 14px 0;
+  }
+  .stat-chip {
+    flex: 1; background: #0d1017; border: 1px solid var(--panel-border);
+    border-radius: 6px; padding: 10px 12px;
+  }
+  .stat-chip .stat-value {
+    font-size: 20px; font-weight: 700; color: var(--text);
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .stat-chip .stat-label {
+    font-size: 10.5px; color: var(--text-faint); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-top: 2px;
+  }
+  #legend-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-faint); margin-bottom: 10px;
+  }
+  .legend-row {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 12.5px; padding: 6px 4px; border-radius: 5px;
+    cursor: pointer; user-select: none;
+  }
+  .legend-row:hover { background: #171b24; }
+  .legend-row .swatch {
+    width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0;
+  }
+  .legend-row .name { flex: 1; color: var(--text); }
+  .legend-row .count {
+    color: var(--text-faint); font-variant-numeric: tabular-nums; font-size: 11px;
+  }
+  .legend-row.dimmed .swatch { opacity: 0.25; }
+  .legend-row.dimmed .name, .legend-row.dimmed .count { color: var(--text-faint); }
+
+  #station-detail {
+    margin-top: auto; padding-top: 16px; border-top: 1px solid var(--panel-border);
+    font-size: 12px; color: var(--text-dim); min-height: 60px;
+  }
+  #station-detail .st-name { color: var(--text); font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  #station-detail .st-hint { color: var(--text-faint); }
+
+  /* ---------- Map ---------- */
+  #map-wrap { flex: 1; position: relative; background: var(--bg); overflow: hidden; cursor: grab; }
+  #map-wrap.panning { cursor: grabbing; }
+  #map-svg { width: 100%; height: 100%; display: block; }
+  .line-path { fill: none; stroke-linecap: round; stroke-linejoin: round; transition: opacity 0.15s; }
+  .station-dot { stroke: #0a0c10; stroke-width: 1.5; transition: r 0.1s, opacity 0.15s; cursor: pointer; }
+  .station-dot:hover { stroke: var(--accent); }
+  .station-label {
+    font-size: 10px; fill: var(--text-dim); pointer-events: none;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  #empty-state {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 10px; color: var(--text-faint); font-size: 13px; text-align: center;
+    pointer-events: none;
+  }
+  #empty-state .big { font-size: 32px; opacity: 0.4; }
+  #zoom-hint {
+    position: absolute; bottom: 14px; right: 16px; font-size: 11px; color: var(--text-faint);
+    font-family: ui-monospace, monospace;
+  }
+</style>
+
+<div id="app">
+  <div id="sidebar">
+    <h1>Tashkent Metro — Topology Preview</h1>
+    <div class="subtitle">OSM-derived line + station geometry</div>
+
+    <div class="drop-zone" id="dz-lines">
+      <label>lines.geojson</label>
+      <input type="file" id="file-lines" accept=".geojson,.json" />
+    </div>
+    <div class="drop-zone" id="dz-stations">
+      <label>stations.geojson</label>
+      <input type="file" id="file-stations" accept=".geojson,.json" />
+    </div>
+    <div class="drop-zone" id="dz-line-stations">
+      <label>line_stations.json</label>
+      <input type="file" id="file-line-stations" accept=".json" />
+    </div>
+
+    <div id="status">Load all three files to render the network.</div>
+
+    <div id="stats-bar">
+      <div class="stat-chip">
+        <div class="stat-value" id="stat-lines">–</div>
+        <div class="stat-label">Lines</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-value" id="stat-stations">–</div>
+        <div class="stat-label">Stations total</div>
+      </div>
+    </div>
+
+    <div id="legend-title">Lines</div>
+    <div id="legend"></div>
+
+    <div id="station-detail">
+      <div class="st-hint">Hover or click a station for details.</div>
+    </div>
+  </div>
+
+  <div id="map-wrap">
+    <svg id="map-svg"></svg>
+    <div id="empty-state">
+      <div class="big">◌</div>
+      <div>No data loaded yet</div>
+    </div>
+    <div id="zoom-hint">scroll to zoom · drag to pan</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const svg = document.getElementById('map-svg');
+  const mapWrap = document.getElementById('map-wrap');
+  const emptyState = document.getElementById('empty-state');
+  const statusEl = document.getElementById('status');
+  const legendEl = document.getElementById('legend');
+  const detailEl = document.getElementById('station-detail');
+
+  let linesData = null;
+  let stationsData = null;
+  let lineStationsData = null;
+  let hiddenLines = new Set();
+
+  // ---- viewport transform state (pan/zoom) ----
+  let view = { scale: 1, tx: 0, ty: 0 };
+  let projectFn = null; // (lon, lat) -> [x, y] in local (unzoomed) space
+
+  function setStatus(msg, ok) {
+    statusEl.textContent = msg;
+    statusEl.style.color = ok ? '#6fcf97' : '';
+  }
+
+  function markReady(zoneId) {
+    document.getElementById(zoneId).classList.add('ready');
+  }
+
+  function readFile(input, onLoad) {
+    input.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const json = JSON.parse(ev.target.result);
+          onLoad(json);
+        } catch (err) {
+          setStatus('Could not parse ' + file.name + ': ' + err.message, false);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  readFile(document.getElementById('file-lines'), (json) => {
+    linesData = json;
+    markReady('dz-lines');
+    tryRender();
+  });
+  readFile(document.getElementById('file-stations'), (json) => {
+    stationsData = json;
+    markReady('dz-stations');
+    tryRender();
+  });
+  readFile(document.getElementById('file-line-stations'), (json) => {
+    lineStationsData = json;
+    markReady('dz-line-stations');
+    tryRender();
+  });
+
+  // Returns Map: station osm_id -> array of { line_name, color_hex, sequence,
+  // distance_to_next_m }, read directly from line_stations.json (already
+  // computed by the snap-to-line step in the Python pipeline — not
+  // recomputed here).
+  function computeStationLineMembership() {
+    const membership = new Map();
+    (lineStationsData || []).forEach(line => {
+      (line.stations || []).forEach(st => {
+        const entry = {
+          line_name: line.line_name,
+          color_hex: line.color_hex,
+          sequence: st.sequence,
+          distance_to_next_m: st.distance_to_next_m,
+        };
+        if (!membership.has(st.station_osm_id)) membership.set(st.station_osm_id, []);
+        membership.get(st.station_osm_id).push(entry);
+      });
+    });
+    return membership;
+  }
+
+  function computeBounds() {
+    let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    function visit(coords, depth) {
+      if (depth === 0) {
+        const [lon, lat] = coords;
+        if (lon < minLon) minLon = lon;
+        if (lon > maxLon) maxLon = lon;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+      } else {
+        coords.forEach(c => visit(c, depth - 1));
+      }
+    }
+    (linesData?.features || []).forEach(f => visit(f.geometry.coordinates, 1));
+    (stationsData?.features || []).forEach(f => visit(f.geometry.coordinates, 0));
+    return { minLon, maxLon, minLat, maxLat };
+  }
+
+  function tryRender() {
+    if (!linesData && !stationsData && !lineStationsData) return;
+    const lineCount = linesData ? linesData.features.length : 0;
+    const stationCount = stationsData ? stationsData.features.length : 0;
+    if (linesData && stationsData && lineStationsData) {
+      setStatus(`${lineCount} line(s), ${stationCount} station(s) loaded.`, true);
+    } else {
+      const missing = [];
+      if (!linesData) missing.push('lines.geojson');
+      if (!stationsData) missing.push('stations.geojson');
+      if (!lineStationsData) missing.push('line_stations.json');
+      setStatus(`Waiting on: ${missing.join(', ')}`, false);
+    }
+    emptyState.style.display = 'none';
+    render();
+  }
+
+  function render() {
+    const bounds = computeBounds();
+    if (!isFinite(bounds.minLon)) return;
+
+    const W = mapWrap.clientWidth, H = mapWrap.clientHeight;
+    const pad = 60;
+    const lonSpan = bounds.maxLon - bounds.minLon || 0.01;
+    const latSpan = bounds.maxLat - bounds.minLat || 0.01;
+    // correct for longitude compression at this latitude
+    const midLat = (bounds.minLat + bounds.maxLat) / 2;
+    const lonScaleCorrection = Math.cos(midLat * Math.PI / 180);
+
+    const scaleX = (W - pad * 2) / (lonSpan * lonScaleCorrection);
+    const scaleY = (H - pad * 2) / latSpan;
+    const scale = Math.min(scaleX, scaleY);
+
+    projectFn = (lon, lat) => {
+      const x = pad + (lon - bounds.minLon) * lonScaleCorrection * scale;
+      const y = H - pad - (lat - bounds.minLat) * scale; // flip Y (north-up)
+      return [x, y];
+    };
+
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = '';
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('id', 'zoom-group');
+    applyTransform(g);
+    svg.appendChild(g);
+
+    // draw lines
+    (linesData?.features || []).forEach(f => {
+      const name = f.properties.name || f.properties.ref || 'line';
+      if (hiddenLines.has(name)) return;
+      const color = f.properties.color_hex || '#888';
+      const coords = f.geometry.coordinates;
+      const pts = coords.map(([lon, lat]) => projectFn(lon, lat));
+      const d = 'M ' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('class', 'line-path');
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', 3.5 / view.scale);
+      path.setAttribute('opacity', 0.85);
+      g.appendChild(path);
+    });
+
+    // draw stations -- skip any whose every associated line is hidden
+    const membership = computeStationLineMembership();
+    const placedLabelRects = [];
+    const fontSize = 10 / view.scale;
+    const charW = fontSize * 0.62; // monospace approx
+    const dotR = 4 / view.scale;
+
+    function rectsOverlap(a, b) {
+      return !(a.x2 < b.x1 || a.x1 > b.x2 || a.y2 < b.y1 || a.y1 > b.y2);
+    }
+
+    (stationsData?.features || []).forEach(f => {
+      const [lon, lat] = f.geometry.coordinates;
+      const lines = membership.get(f.properties.osm_id) || [];
+      const anyVisible = lines.length === 0 || lines.some(ln => !hiddenLines.has(ln.line_name));
+      if (!anyVisible) return; // every line this station belongs to is hidden
+
+      const [x, y] = projectFn(lon, lat);
+      const name = f.properties.name || 'station';
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', x);
+      circle.setAttribute('cy', y);
+      circle.setAttribute('r', dotR);
+      circle.setAttribute('fill', '#e7e9ee');
+      circle.setAttribute('class', 'station-dot');
+      circle.addEventListener('mouseenter', () => showStationDetail(f.properties, lines));
+      circle.addEventListener('click', () => showStationDetail(f.properties, lines, true));
+      g.appendChild(circle);
+
+      // Try a few candidate label positions; skip the label (keep the dot)
+      // if none avoid overlapping an already-placed label.
+      const w = name.length * charW;
+      const h = fontSize * 1.2;
+      const candidates = [
+        { x: x + 7 / view.scale, y: y + 3 / view.scale, anchor: 'start' },   // right
+        { x: x - 7 / view.scale - w, y: y + 3 / view.scale, anchor: 'start' }, // left
+        { x: x - w / 2, y: y - 8 / view.scale, anchor: 'start' },            // above
+        { x: x - w / 2, y: y + 14 / view.scale, anchor: 'start' },           // below
+      ];
+      let chosen = null;
+      for (const c of candidates) {
+        const rect = { x1: c.x, y1: c.y - h, x2: c.x + w, y2: c.y };
+        if (!placedLabelRects.some(r => rectsOverlap(r, rect))) {
+          chosen = { ...c, rect };
+          break;
+        }
+      }
+      if (chosen) {
+        placedLabelRects.push(chosen.rect);
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', chosen.x);
+        label.setAttribute('y', chosen.y);
+        label.setAttribute('class', 'station-label');
+        label.setAttribute('font-size', fontSize);
+        label.textContent = name;
+        g.appendChild(label);
+      }
+    });
+
+    renderLegend(membership);
+    updateStatsBar(membership);
+  }
+
+  function updateStatsBar(membership) {
+    const lineCount = (linesData?.features || []).length;
+    const stationCount = (stationsData?.features || []).length;
+    document.getElementById('stat-lines').textContent = lineCount || '–';
+    document.getElementById('stat-stations').textContent = stationCount || '–';
+  }
+
+  function showStationDetail(props, lines, pinned) {
+    const linesText = lines && lines.length
+      ? lines.map(ln => `${ln.line_name} (#${ln.sequence})`).join('; ')
+      : 'not present in line_stations.json';
+    detailEl.innerHTML = `
+      <div class="st-name">${props.name || 'Unnamed station'}</div>
+      <div class="st-hint">osm_id: ${props.osm_id ?? 'n/a'}</div>
+      <div class="st-hint" style="margin-top:4px;">Line(s): ${linesText}</div>
+    `;
+  }
+
+  function renderLegend(membership) {
+    legendEl.innerHTML = '';
+    (lineStationsData || []).forEach(line => {
+      const name = line.line_name || line.line_ref || 'line';
+      const color = line.color_hex || '#888';
+      const stationOnLine = (line.stations || []).length;
+      const row = document.createElement('div');
+      row.className = 'legend-row' + (hiddenLines.has(name) ? ' dimmed' : '');
+      row.innerHTML = `<div class="swatch" style="background:${color}"></div>` +
+        `<div class="name">${name}</div>` +
+        `<div class="count">${stationOnLine}</div>`;
+      row.addEventListener('click', () => {
+        if (hiddenLines.has(name)) hiddenLines.delete(name);
+        else hiddenLines.add(name);
+        render();
+      });
+      legendEl.appendChild(row);
+    });
+  }
+
+  // ---- pan & zoom ----
+  function applyTransform(g) {
+    g.setAttribute('transform', `translate(${view.tx} ${view.ty}) scale(${view.scale})`);
+  }
+
+  let isPanning = false, panStart = { x: 0, y: 0 }, viewStart = { tx: 0, ty: 0 };
+
+  mapWrap.addEventListener('mousedown', (e) => {
+    isPanning = true;
+    mapWrap.classList.add('panning');
+    panStart = { x: e.clientX, y: e.clientY };
+    viewStart = { tx: view.tx, ty: view.ty };
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!isPanning) return;
+    view.tx = viewStart.tx + (e.clientX - panStart.x);
+    view.ty = viewStart.ty + (e.clientY - panStart.y);
+    const g = document.getElementById('zoom-group');
+    if (g) applyTransform(g);
+  });
+  window.addEventListener('mouseup', () => {
+    isPanning = false;
+    mapWrap.classList.remove('panning');
+  });
+
+  mapWrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = mapWrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const newScale = Math.max(0.2, Math.min(20, view.scale * factor));
+
+    // zoom toward cursor position
+    view.tx = mx - (mx - view.tx) * (newScale / view.scale);
+    view.ty = my - (my - view.ty) * (newScale / view.scale);
+    view.scale = newScale;
+
+    // re-render so stroke widths / dot radii stay visually consistent
+    render();
+  }, { passive: false });
+
+  window.addEventListener('resize', () => { if (linesData || stationsData) render(); });
+})();
+</script>
