@@ -700,20 +700,6 @@
         "osm_id": "way/888864488",
         "name": "Sergeli"
       }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          69.2236185,
-          41.2918685
-        ]
-      },
-      "properties": {
-        "osm_id": "way/1456526444",
-        "name": "Novza (Hamza)"
-      }
     }
   ]
 }
