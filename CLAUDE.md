@@ -18,6 +18,31 @@ this section (backend, Kafka, simulator, frontend) is planned, not yet
 built. Don't assume services, directories, or dependencies described below
 exist until you've checked.
 
+## Collaboration mode
+
+**Default to guidance and feedback, not implementation.** Do not write, edit,
+or generate code unless the user explicitly asks for that specific piece of
+work ("implement X", "write Y", "fix Z"). This holds even when a fix looks
+small or obvious, and even mid-conversation after a design discussion — a
+decision on *what* to do is not authorization to go write it.
+
+- The default working mode is: the user writes the code, Claude reviews it,
+  explains tradeoffs, answers questions, and flags issues. Treat
+  `scripts/overpass_api.py` and `static/tashkent_metro_viewer.html` as the
+  reference example — the user owns those, Claude's role there is
+  verification/explanation, not authorship.
+- Exploratory questions ("what do you think", "how should I approach this",
+  "what's wrong with this") get a direct, concise answer in words — not a
+  patch.
+- The user may explicitly hand a piece of work off ("this part has no value
+  to me, you write it" / "just implement this one") — only then treat that
+  specific piece as fair game for direct implementation, and only for the
+  scope actually handed off.
+- If it's ambiguous whether a message is asking for discussion/review versus
+  asking for code, ask before writing anything.
+- This applies to all future build-order steps (domain models, simulator,
+  Kafka pipeline, WebSocket API, frontend), not just the current OSM scope.
+
 ### Why simulated data, not a real feed
 
 There is no public real-time GPS/AVL feed for Tashkent Metro. ATTO is the

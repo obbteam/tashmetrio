@@ -1,0 +1,70 @@
+erDiagram
+    LINE ||--o{ LINE_STATION : orders
+    STATION ||--o{ LINE_STATION : appears_on
+    STATION ||--o{ TRANSFER : "connects (station_a)"
+    STATION ||--o{ TRANSFER : "connects (station_b)"
+    LINE ||--o{ TRAIN : operates
+    TRAIN ||--o{ TIMETABLE_ENTRY : scheduled_as
+    TRAIN ||--o{ TRIP : runs
+    TIMETABLE_ENTRY ||--o{ TRIP : realized_as
+    LINE_STATION ||--o{ TRIP : positions
+    LINE ||--o{ INCIDENT : affected_by
+    STATION ||--o{ INCIDENT : affected_by
+
+    LINE {
+        uuid id PK
+        string name
+        geometry geom "LineString"
+    }
+    STATION {
+        uuid id PK
+        string osm_id
+        string name
+        geometry geom "Point"
+    }
+    LINE_STATION {
+        uuid id PK
+        uuid line_id FK
+        uuid station_id FK
+        int sequence
+        int distance_to_next_m
+    }
+    TRANSFER {
+        uuid id PK
+        uuid station_a_id FK
+        uuid station_b_id FK
+        int walk_time_s
+    }
+    TRAIN {
+        uuid id PK
+        string name
+        uuid line_id FK
+        timestamp updated_at
+    }
+    TIMETABLE_ENTRY {
+        uuid id PK
+        uuid train_id FK
+        string direction
+        time departure_time
+    }
+    TRIP {
+        uuid id PK
+        uuid train_id FK
+        uuid timetable_entry_id FK
+        timestamp departure_time
+        timestamp estimated_arrival_time
+        string trip_status
+        uuid current_segment_id FK
+        decimal progress_pct
+        geometry current_position
+        timestamp updated_at
+    }
+    INCIDENT {
+        uuid id PK
+        uuid line_id FK
+        uuid station_id FK
+        string type
+        string severity
+        timestamp started_at
+        timestamp ended_at
+    }
