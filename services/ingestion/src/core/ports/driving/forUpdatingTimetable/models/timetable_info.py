@@ -7,6 +7,8 @@ from src.core.common.enums import Direction
 
 
 class TimetableInfo(BaseModel):
+    timetable_id: UUID
+    
     train_id: UUID | None
     direction: Direction | None
     departure_time: time | None

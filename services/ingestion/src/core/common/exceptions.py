@@ -9,6 +9,8 @@ class ErrorCodeEnum(StrEnum):
     
     DATABASE_INTEGRITY_FAILED = "DATABASE_INTEGRITY_FAILED"
     DATABASE_UNKNOWN_ERROR = "DATABASE_UNKNOWN_ERROR"
+    
+    TRIP_NOT_FOUND = "TRIP_NOT_FOUND"
 
 
 class LogicalException(Exception):

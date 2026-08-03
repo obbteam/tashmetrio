@@ -7,5 +7,5 @@ from src.core.ports.driving.forUpdatingTrainPosition.models.train_position impor
 
 class ForUpdatingTrainPosition(ABC):
     @abstractmethod
-    def update(self, new_train_position: TrainPosition) -> bool:
+    async def update(self, new_train_position: TrainPosition) -> bool:
         pass

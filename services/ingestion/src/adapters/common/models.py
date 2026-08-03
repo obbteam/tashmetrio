@@ -126,6 +126,7 @@ class Lines(Base):
         "LineStations", back_populates="line"
     )
     trains: Mapped[list["Trains"]] = relationship("Trains", back_populates="line")
+    trips: Mapped[list["Trips"]] = relationship("Trips", back_populates="line")
 
 
 class SpatialRefSys(Base):
@@ -377,6 +378,7 @@ class Trips(Base):
             ondelete="SET NULL",
             name="trips_current_segment_id_fkey",
         ),
+        ForeignKeyConstraint(["line_id"], ["lines.id"], name="trips_line_id_fkey"),
         ForeignKeyConstraint(
             ["timetable_entry_id"],
             ["timetable_entries.id"],
@@ -418,6 +420,13 @@ class Trips(Base):
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), nullable=False, server_default=text("now()")
     )
+    is_finished: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    line_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    current_segment_time: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), nullable=False, server_default=text("now()")
+    )
     current_segment_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     current_position: Mapped[Optional[Any]] = mapped_column(
         Geometry("POINT", 4326, 2, from_text="ST_GeomFromEWKT", name="geometry")
@@ -426,6 +435,7 @@ class Trips(Base):
     current_segment: Mapped[Optional["LineStations"]] = relationship(
         "LineStations", back_populates="trips"
     )
+    line: Mapped["Lines"] = relationship("Lines", back_populates="trips")
     timetable_entry: Mapped["TimetableEntries"] = relationship(
         "TimetableEntries", back_populates="trips"
     )

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.core.ports.driven.forStoringTimetable.models.timetable import Timetable
+from src.core.common.models.timetable import Timetable
 
 
 class ForStoringTimetable(ABC):

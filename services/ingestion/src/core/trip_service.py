@@ -1,53 +1,83 @@
-from uuid import UUID
+from datetime import datetime
 
 from src.core.common.exceptions import ErrorCodeEnum, LogicalException
-from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import (
-    ForLookingUpTimetable,
+from src.core.common.models.trip import Trip
+from src.core.ports.driven.forLookingUpNextSegment.for_looking_up_next_segment import (
+    ForLookingUpNextSegment,
 )
-from src.core.ports.driven.forStoringTimetable.for_storing_timetable import (
-    ForStoringTimetable,
+from src.core.ports.driven.forLookingUpTrip.for_looking_up_trip import ForLookingUpTrip
+from src.core.ports.driven.forUpdatingTrip.for_updating_trip import ForUpdatingTrip
+from src.core.ports.driving.forUpdatingTrainPosition.for_updating_train_position import (
+    ForUpdatingTrainPosition,
 )
-from src.core.ports.driven.forStoringTimetable.models.timetable import Timetable
-from src.core.ports.driving.forUpdatingTimetable.for_updating_timetable import (
-    ForUpdatingTimetable,
+from src.core.ports.driving.forUpdatingTrainPosition.models.train_position import (
+    TrainPosition,
 )
-from src.core.ports.driving.forUpdatingTimetable.models.timetable_info import (
-    TimetableInfo,
-)
+from src.settings import settings
 
-from src.core.ports.driving.forUpdatingTrainPosition.
 
-class TripService(ForUp):
+class TripService(ForUpdatingTrainPosition):
     def __init__(
         self,
-        forStoringTimetable: ForStoringTimetable,
-        forLookingUpTimetable: ForLookingUpTimetable,
+        forLookingUpTrip: ForLookingUpTrip,
+        forUpdatingTrip: ForUpdatingTrip,
+        forLookingUpNextSegment: ForLookingUpNextSegment,
     ):
-        self.forStoringTimetable = forStoringTimetable
-        self.forLookingUpTimetable = forLookingUpTimetable
+        self.forLookingUpTrip = forLookingUpTrip
+        self.forUpdatingTrip = forUpdatingTrip
+        self.forLookingUpNextSegment = forLookingUpNextSegment
 
-    async def update(self, timetable_id: UUID, timetable_info: TimetableInfo) -> bool:
-        old = await self.forLookingUpTimetable.get_timetable_by_id(id=timetable_id)
-        # TODO should also check if the train is not booked at the new departure time
-        # by getting all the trips and checking if the new departure time is not
-
+    async def update(self, new_train_position: TrainPosition) -> bool:
+        old = await self.forLookingUpTrip.get_trip_by_id(new_train_position.trip_id)
         if old is None:
             raise LogicalException(
-                http_code=404, error_code=ErrorCodeEnum.TIMETABLE_NOT_FOUND
+                http_code=404, error_code=ErrorCodeEnum.TRIP_NOT_FOUND
             )
 
-        result = await self.forStoringTimetable.store(
-            Timetable(
+        current_segment = old.current_segment_id
+        current_segment_time = old.current_segment_time
+        is_finished = False
+        new_progress = new_train_position.segment_progress_pct
+        
+
+        if new_progress - old.progress_pct < settings.MIN_PROGRESS_THRESHOLD:
+            return False
+
+        if new_progress >= 100:
+            next_segment = await self.forLookingUpNextSegment.get_next_segment(
+                line_id=old.line_id, current_segment_id=current_segment
+            )
+
+            new_progress = 0
+            current_segment_time = datetime.now()
+            
+            if next_segment is None:
+                is_finished = True
+            else:
+                current_segment = next_segment
+
+
+        # TODO calc new eta, trip status, position
+        new_eta = old.estiamated_arrival_time
+        new_trip_status = old.trip_status
+        new_position = old.current_position
+
+        result = await self.forUpdatingTrip.update(
+            trip=Trip(
                 id=old.id,
-                train_id=timetable_info.train_id or old.train_id,
-                direction=timetable_info.direction or old.direction,
-                departure_time=timetable_info.departure_time or old.departure_time,
+                train_id=old.train_id,
+                line_id=old.line_id,
+                timetable_entry_id=old.timetable_entry_id,
+                departure_time=old.departure_time,
+                estiamated_arrival_time=new_eta,
+                trip_status=new_trip_status,
+                current_segment_id=current_segment,
+                progress_pct=new_progress,
+                current_position=new_position,
+                updated_at=datetime.now(),
+                is_finished=is_finished,
+                current_segment_time=current_segment_time
             )
         )
-
-        if result is False:
-            raise LogicalException(
-                http_code=500, error_code=ErrorCodeEnum.TIMETABLE_NOT_UPDATED
-            )
 
         return result

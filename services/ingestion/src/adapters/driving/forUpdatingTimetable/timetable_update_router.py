@@ -23,8 +23,8 @@ async def update(
     for_updating_timetable: FromDishka[ForUpdatingTimetable],
 ) -> bool:
     return await for_updating_timetable.update(
-        timetable_id=timetable_entry_id,
-        timetable_info=TimetableInfo(
+        new_timetable_info=TimetableInfo(
+            timetable_id=timetable_entry_id,
             train_id=update_time_table_request.train_id,
             direction=update_time_table_request.direction,
             departure_time=update_time_table_request.departure_time,

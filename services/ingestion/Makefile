@@ -13,3 +13,6 @@ generate:
 
 run:
 	fastapi dev src/main.py --port=8090
+
+simulate:
+	python3 -m src.simulator_main

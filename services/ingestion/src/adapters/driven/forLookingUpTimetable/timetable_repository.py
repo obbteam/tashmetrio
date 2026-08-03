@@ -4,10 +4,10 @@ from sqlalchemy import select
 
 from src.adapters.common.database_session import IDatabaseSession
 from src.adapters.common.models import TimetableEntries
+from src.core.common.models.timetable import Timetable
 from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import (
     ForLookingUpTimetable,
 )
-from src.core.ports.driven.forLookingUpTimetable.models.timetable import Timetable
 
 
 class TimetableRepository(ForLookingUpTimetable):

@@ -2,10 +2,10 @@ from sqlalchemy import update
 
 from src.adapters.common.models import TimetableEntries
 from src.adapters.common.unit_of_work import IUnitOfWork
+from src.core.common.models.timetable import Timetable
 from src.core.ports.driven.forStoringTimetable.for_storing_timetable import (
     ForStoringTimetable,
 )
-from src.core.ports.driven.forStoringTimetable.models.timetable import Timetable
 
 
 class TimetableRepository(ForStoringTimetable):
@@ -28,4 +28,4 @@ class TimetableRepository(ForStoringTimetable):
             result = await session.execute(stmt)
             await self._unit_of_work.commit()
 
-            return result.rowCount == 1
+            return result.scalars().all().count == 1

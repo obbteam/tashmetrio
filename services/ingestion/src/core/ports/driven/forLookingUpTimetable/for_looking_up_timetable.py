@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from src.core.ports.driven.forLookingUpTimetable.models.timetable import Timetable
+from src.core.common.models.timetable import Timetable
 
 
 class ForLookingUpTimetable(ABC):

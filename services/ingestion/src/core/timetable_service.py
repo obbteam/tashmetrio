@@ -1,13 +1,12 @@
-from uuid import UUID
 
 from src.core.common.exceptions import ErrorCodeEnum, LogicalException
+from src.core.common.models.timetable import Timetable
 from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import (
     ForLookingUpTimetable,
 )
 from src.core.ports.driven.forStoringTimetable.for_storing_timetable import (
     ForStoringTimetable,
 )
-from src.core.ports.driven.forStoringTimetable.models.timetable import Timetable
 from src.core.ports.driving.forUpdatingTimetable.for_updating_timetable import (
     ForUpdatingTimetable,
 )
@@ -25,8 +24,8 @@ class TimeTableService(ForUpdatingTimetable):
         self.forStoringTimetable = forStoringTimetable
         self.forLookingUpTimetable = forLookingUpTimetable
 
-    async def update(self, timetable_id: UUID, timetable_info: TimetableInfo) -> bool:
-        old = await self.forLookingUpTimetable.get_timetable_by_id(id=timetable_id)
+    async def update(self, new_timetable_info: TimetableInfo) -> bool:
+        old = await self.forLookingUpTimetable.get_timetable_by_id(id=new_timetable_info.timetable_id)
         # TODO should also check if the train is not booked at the new departure time
         # by getting all the trips and checking if the new departure time is not
 
@@ -38,9 +37,9 @@ class TimeTableService(ForUpdatingTimetable):
         result = await self.forStoringTimetable.store(
             Timetable(
                 id=old.id,
-                train_id=timetable_info.train_id or old.train_id,
-                direction=timetable_info.direction or old.direction,
-                departure_time=timetable_info.departure_time or old.departure_time,
+                train_id=new_timetable_info.train_id or old.train_id,
+                direction=new_timetable_info.direction or old.direction,
+                departure_time=new_timetable_info.departure_time or old.departure_time,
             )
         )
 

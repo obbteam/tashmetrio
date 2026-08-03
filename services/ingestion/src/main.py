@@ -5,10 +5,10 @@ from fastapi import FastAPI
 from src.adapters.common.database_session import IDatabaseSession, get_database_session
 from src.adapters.common.unit_of_work import IUnitOfWork, get_unit_of_work
 from src.adapters.driven.forLookingUpTimetable.timetable_repository import (
-    TimetableRepository as LookUpRepo,
+    TimetableRepository as TimeTableLookUpRepo,
 )
 from src.adapters.driven.forStoringTimetable.timetable_repository import (
-    TimetableRepository as StoreRepo,
+    TimetableRepository as TimeTableStoreRepo,
 )
 from src.adapters.driving.forUpdatingTimetable.timetable_update_router import (
     router as timetable_router,
@@ -38,12 +38,12 @@ def setup_app() -> FastAPI:
         get_unit_of_work, scope=Scope.REQUEST, provides=IUnitOfWork
     )
 
-    timetable_service_provider.provide(LookUpRepo, provides=ForLookingUpTimetable)
-    timetable_service_provider.provide(StoreRepo, provides=ForStoringTimetable)
+    timetable_service_provider.provide(TimeTableLookUpRepo, provides=ForLookingUpTimetable)
+    timetable_service_provider.provide(TimeTableStoreRepo, provides=ForStoringTimetable)
     timetable_service_provider.provide(TimeTableService, provides=ForUpdatingTimetable)
 
     container = make_async_container(timetable_service_provider)
-
+    
     setup_dishka(container=container, app=app)
     return app
 
