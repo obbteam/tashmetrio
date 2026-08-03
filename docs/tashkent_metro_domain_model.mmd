@@ -7,6 +7,7 @@ erDiagram
     TRAIN ||--o{ TIMETABLE_ENTRY : scheduled_as
     TRAIN ||--o{ TRIP : runs
     TIMETABLE_ENTRY ||--o{ TRIP : realized_as
+    LINE ||--o{ TRIP : runs_on
     LINE_STATION ||--o{ TRIP : positions
     LINE ||--o{ INCIDENT : affected_by
     STATION ||--o{ INCIDENT : affected_by
@@ -15,6 +16,8 @@ erDiagram
         uuid id PK
         string name
         geometry geom "LineString"
+        decimal max_speed_mps
+        decimal max_acceleration_mps2
     }
     STATION {
         uuid id PK
@@ -51,10 +54,13 @@ erDiagram
         uuid id PK
         uuid train_id FK
         uuid timetable_entry_id FK
+        uuid line_id FK
         timestamp departure_time
         timestamp estimated_arrival_time
         string trip_status
+        boolean is_finished
         uuid current_segment_id FK
+        timestamp current_segment_time
         decimal progress_pct
         geometry current_position
         timestamp updated_at
