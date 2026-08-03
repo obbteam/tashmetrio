@@ -2,22 +2,43 @@
 
 ## Purpose
 
-The ingestion service is the domain core of the simulated railway: it decides
-which trips are running right now, advances their position every tick, and
-publishes those positions to Kafka. It corresponds to build-order steps 3
-("Simulation engine") and 4 ("Kafka pipeline") from `CLAUDE.md` /
-`PROJECT_CONTEXT.md` combined — those two steps aren't separate services in
-the hexagonal layout described in `PROJECT_CONTEXT.md`; the simulator is just
-the inbound adapter that drives this service's core, and the Kafka producer
-is one of its outbound adapters. There is no standalone "simulation engine"
-sitting apart from ingestion.
+The ingestion service resolves raw train positions into topology (line/segment/
+direction) and publishes them to Kafka — it's a translator, not a physics
+engine. Producing those raw positions is a separate concern: today a **sim
+engine** component fabricates them by simulating trip movement; later, a real
+ATS feed would produce them from track-circuit occupancy. Both hand ingestion
+a raw position through the same inbound port, so ingestion's core doesn't
+change when the producer does — that's the swappable-producer guarantee
+described in `PROJECT_CONTEXT.md` ("the ingestion service resolves raw
+position into topology... a raw coordinate or track-circuit ID means nothing
+on its own").
+
+This corresponds to build-order steps 3 ("Simulation engine") and 4 ("Kafka
+pipeline") from `CLAUDE.md` / `PROJECT_CONTEXT.md`, but not as a single fused
+core. The sim engine and the ingestion resolver are two components, currently
+in **one deployable** (same process, same codebase), each with a distinct
+job:
+
+- **Sim engine** — decides which trips are running right now and advances
+  their position every tick. This is simulator-only logic: a real feed
+  wouldn't need it, because a real train already knows where it is; the sim
+  engine's job is to *fabricate* a raw position the same way a real ATS would
+  report one.
+- **Ingestion (`TripService`)** — takes whatever raw position it's handed,
+  resolves it into topology terms, persists it, and publishes it. Producer-
+  agnostic by construction.
 
 ## Scope
 
 **In scope:**
-- Materializing `trips` from `timetable_entries` (turning the recurring daily
-  plan into concrete, individually-trackable runs for a given day).
-- Per-tick position advancement for every currently active trip.
+- Sim engine: finding currently-active trips (time-window filter over
+  `trips`), advancing each one's raw position every tick via a speed profile
+  (see below).
+- Trip materialization (`TripService.generateTrips`): turning
+  `timetable_entries` into concrete `trips` rows, on its own independent
+  trigger — decoupled from the position tick.
+- Position resolution (`TripService.updateTrainPosition`): raw position ->
+  segment/direction/interpolated point, persisted and published.
 - Publishing `train.positions` events to Kafka.
 - Adding a Kafka broker to local infra.
 
@@ -29,132 +50,143 @@ feed adapter is speculative until operator conversations happen (per
 `transfers` (station-to-station walking edges at interchanges) is also out of
 scope here — a physical train never "transfers" lines mid-trip, so that table
 belongs to a future passenger trip-planning capability, not to this service.
+The `ForUpdatingTimetable` port below is named but deliberately not designed
+yet — placeholder only.
 
-## Hexagonal structure
+## Components and ports
 
-```
- SimulationClock (inbound adapter, in-process tick loop)
-        │  calls
-        ▼
- AdvanceSimulationTick (inbound port / use case)
-        │
-        ▼
- Domain core: TripGenerator + Dispatcher + PositionAdvancer
-        │                                        │
-        ▼ (outbound ports)                       ▼
- TopologyRepository, TimetableRepository,   EventPublisher
- TripRepository
-        │                                        │
-        ▼ (outbound adapters)                    ▼
- Postgres (SQLAlchemy async)               Kafka producer (FastStream)
-```
+Three inbound ports feed two domain services (`TripService`,
+`TimetableService`):
 
-### Inbound
+**1. Sim engine -> `ForUpdatingTrainPosition` -> `TripService.updateTrainPosition`
+-> `ForPublishingTrainPosition` (Kafka) + `ForPersistingTrip` (`TripRepo`)**
 
-- **Adapter**: `SimulationClock` — an async loop (or APScheduler) that fires
-  every 1–2s and calls the inbound port directly as a function call. No
-  network hop, no queue between "simulator" and "ingestion" — they are the
-  same process; the simulator *is* this service's tick source.
-- **Port**: `AdvanceSimulationTick.tick(now: datetime) -> None` — the single
-  entrypoint the domain core exposes to any tick source.
+The sim engine queries `TripRepo` directly to find currently-active trips (it
+needs this to know what to simulate — this is the old "Dispatcher" filter,
+now owned by the sim engine rather than ingestion), computes a new raw
+position per trip per tick using the speed model below, and calls this port
+**once per active trip**. `TripService` resolves that raw position into
+segment/direction/interpolated point, persists the `Trip`, and publishes the
+event. Per-trip granularity, not one batched tick call — this also happens to
+match the shape a real ATS feed would use (one occupancy report per train),
+not just the sim engine's shape.
 
-### Domain core
+**2. UI -> `ForUpdatingTimetable` -> `TimetableService.updateTimetable` ->
+`ForPersistingTimetable` -> `TimetableRepo`**
 
-Entities reflected in the schema (`00002_topology_and_domain_tables.sql`):
+Named for completeness; no validation/conflict logic designed yet, and not in
+current build scope.
 
-- `Line`, `Station`, `LineStation` — topology, read-mostly.
-- `Train` — the fleet roster (`name`, a dedicated `line_pk`). Rarely changes;
-  this service never creates or retires a `Train` row.
-- `TimetableEntry` — the recurring daily plan (`train_pk`, `direction`,
-  `departure_time` as a bare `TIME`). Edited independently of anything live —
-  changing tomorrow's headways never touches a row something else is
-  actively writing to.
-- `Trip` — one concrete calendar occurrence of a `TimetableEntry`
-  (`departure_time`/`estimated_arrival_time` as real `TIMESTAMPTZ`s, plus the
-  live fields: `trip_status`, `current_segment_pk`, `progress_pct`,
-  `current_position`). This is the row this service actually mutates every
-  tick.
+**3. Async-loop adapter (~6h) -> `ForGeneratingTrips` -> `TripService.generateTrips`
+<- `ForLookingUpTrips` (`TripRepo` read) -> `ForPersistingTrip` -> `TripRepo`**
 
-Three domain services, all invoked from the same `AdvanceSimulationTick` use
-case (one core, several internal roles — no separate deployable):
+Runs on its own independent cadence, decoupled from the 1–2s position tick —
+resolves the earlier open question about trip generation competing with
+per-tick work. Logic unchanged from the original design: for every
+`timetable_entries` row without a `trips` row for the relevant day, create
+one, with `estimated_arrival_time` computed from line length ÷ speed.
 
-- **TripGenerator** — reads `timetable_entries` and, for any entry that
-  doesn't yet have a `trips` row for the relevant day, creates one:
-  `estimated_arrival_time` is computed from `departure_time` + (line length ÷
-  commercial speed, from `line_stations`/`lines`) and stored directly on the
-  new row. Doesn't need to run every tick the way the other two do — see Open
-  Questions. The DB-level `EXCLUDE` constraint on `trips` (`train_pk` +
-  time-range overlap) is a backstop against a bug here, not something this
-  logic needs to check itself; a coherent timetable should never trigger it.
-- **Dispatcher** — per tick, finds `trips` whose `[departure_time,
-  estimated_arrival_time)` window currently contains `now()`. This used to
-  mean *creating and deleting* rows (spawn/retire a live `Train`); now it's a
-  pure filter over rows that already exist, because `TripGenerator` creates
-  them ahead of time. Trips outside their window are simply skipped, not
-  touched.
-- **PositionAdvancer** — for every trip `Dispatcher` hands it, computes
-  `delta_arc_length = elapsed_time × segment_speed`, advances
-  `progress_pct`/`current_segment_pk` (crossing into the next `line_station`
-  when progress reaches 100%), and asks `TopologyRepository` for the
-  interpolated point at the resulting fraction.
+`TripRepo` is **one shared repository** used by both the sim engine (reads,
+to find active trips) and `TripService` (writes, to persist resolved
+positions and generated trips). Accepted as fine for now — sim engine and
+ingestion are components of a single deployable, not separate services.
+Revisit only if they're ever split apart, since an external producer (e.g. a
+real ATS-fed deployment) shouldn't read this table directly.
 
-### Outbound ports
+## Sim engine: speed model
 
-- **`TopologyRepository`** — read `lines`/`stations`/`line_stations`
-  (ordered per line, with distances); interpolate a point at a given fraction
-  along a line's geometry.
-- **`TimetableRepository`** — read `timetable_entries` (the recurring plan).
-  Used only by `TripGenerator`.
-- **`TripRepository`** — create `trips` rows (`TripGenerator`); read/update
-  currently active trips (`Dispatcher`, `PositionAdvancer`).
-- **`EventPublisher`** — publish `train.positions` (and, later,
-  `network.alerts`) using the existing `Event[T]` envelope mentioned in
-  `PROJECT_CONTEXT.md`.
+**Decided: trapezoidal speed profile** (accelerate -> cruise at max speed ->
+decelerate), computed **statelessly** — speed is never persisted as a field
+on `trips`, only derived each tick from elapsed time since departure (or
+arc-length already covered) within the current segment. This matches the
+domain's existing pattern of not storing state that's cheaply derivable
+(trip-active status is a time-range comparison, not a stored flag; same idea
+here).
 
-### Outbound adapters
-
-- **Postgres adapter** (SQLAlchemy async + asyncpg) implementing all three
-  repositories. Position interpolation is delegated to PostGIS —
-  `ST_LineInterpolatePoint(line.geom, fraction)` — so the domain core only
-  ever computes a plain 0–1 fraction (`arc_length / line_length`) and never
-  touches geometry directly. This keeps the domain geometry-agnostic and
-  avoids maintaining a second interpolation implementation that has to stay
-  bit-for-bit consistent with what's stored in `lines.geom` /
-  `line_stations.distance_to_next_m`.
-- **Kafka producer adapter** (FastStream) implementing `EventPublisher`.
-- Dishka binds all adapters to their ports at startup.
+- Each segment (`line_stations` edge) accelerates from 0 up to a max speed,
+  cruises, then decelerates to ~0 at the next station — standard kinematics
+  (`v = u + at`, `d = ut + ½at²`) per phase.
+- **Constants are per-line**: `max_speed_mps` and `acceleration_mps2` live as
+  new columns on `lines` (needs a migration, not yet written) rather than a
+  single network-wide constant, a separate lookup table, or a code constant.
+- **Short segments** (shorter than the combined accel+decel distance, which
+  would need a triangular profile instead of trapezoidal) are a known,
+  accepted gap for now — not implemented. A short segment may show a brief
+  unrealistic speed spike; revisit if it turns out to matter visually once
+  real Tashkent segment lengths are loaded.
+- Considered and rejected for now:
+  - Persisting a `current_speed_mps` field — real ATS telemetry would
+    include it, but nothing downstream needs speed as its own queryable
+    datum yet.
+  - Constant speed per segment — looks robotic (instant snap to full speed,
+    dead stop at stations).
+  - S-curve (jerk-limited) profiles — more realistic, not worth the
+    complexity at demo scale.
+  - Random jitter on top of the base profile — still open, could layer on
+    later for visual "aliveness."
 
 ## Tick flow
 
-1. `SimulationClock` fires with the current time.
-2. `AdvanceSimulationTick.tick(now)` runs.
-3. **TripGenerator**: ensures every `timetable_entries` row has a
-   corresponding `trips` row for the relevant day (see Open Questions on how
-   often this step actually needs to do real work).
-4. **Dispatcher**: query `trips` whose time window contains `now`.
-5. **PositionAdvancer**: for each, compute new segment/progress/fraction,
-   call `TopologyRepository` to interpolate the point, update and persist
-   the `Trip`.
-6. Publish a `train.positions` event per trip that changed this tick.
+Two independent flows, decoupled by cadence:
+
+**Position update (sim engine's own loop, 1–2s):**
+1. Sim engine tick fires.
+2. Sim engine queries `TripRepo` directly for trips whose `[departure_time,
+   estimated_arrival_time)` window contains `now()`.
+3. For each active trip, sim engine computes the new raw position via the
+   trapezoidal speed profile (elapsed time since departure -> speed ->
+   arc-length delta).
+4. Sim engine calls `ForUpdatingTrainPosition` once per active trip with the
+   raw position.
+5. `TripService.updateTrainPosition` resolves the raw position into
+   segment/direction, asks `TopologyRepository`/PostGIS to interpolate the
+   actual point, and persists the `Trip`.
+6. Publishes a `train.positions` event only if the train has moved more than
+   a threshold since the last published position — the threshold is a
+   fraction of the current segment's `distance_to_next_m` (e.g. 1%), not a
+   flat distance, so short and long segments both get a reasonable update
+   rate. A trip dwelling at a station with zero movement simply doesn't
+   publish — no heartbeat — since Redis already holds its last known
+   position and nothing downstream needs a "still here" signal.
 7. Commit.
+
+**Trip generation (independent ~6h trigger):**
+1. Async-loop adapter fires `ForGeneratingTrips`.
+2. `TripService.generateTrips` reads `timetable_entries`, checks each for an
+   existing `trips` row via `ForLookingUpTrips`.
+3. Creates missing rows (with `estimated_arrival_time` from line length ÷
+   speed) via `ForPersistingTrip`.
+4. Commit.
+
+**Timetable edit (placeholder, not designed):**
+`UI -> ForUpdatingTimetable -> TimetableService.updateTimetable ->
+ForPersistingTimetable -> TimetableRepo`.
 
 ## Directory structure (self-contained, no shared package yet)
 
 ```
 services/ingestion/
-  domain/              # Train, TimetableEntry, Trip, Line, Station,
-                        # LineStation entities + TripGenerator, Dispatcher,
-                        # PositionAdvancer
-  application/         # inbound port + AdvanceSimulationTick use case
+  domain/               # Trip, Train, TimetableEntry, Line, Station,
+                         # LineStation entities; TripService (updateTrainPosition,
+                         # generateTrips); TimetableService (updateTimetable,
+                         # placeholder)
+  sim_engine/           # own tick loop; direct TripRepo reads (active-trip
+                         # lookup); trapezoidal speed profile; calls
+                         # ForUpdatingTrainPosition per active trip
+  application/          # inbound ports: ForUpdatingTrainPosition,
+                         # ForGeneratingTrips, ForUpdatingTimetable
   adapters/
-    inbound/           # SimulationClock
+    inbound/
+      trip_generation_clock.py   # ~6h loop -> ForGeneratingTrips
+      timetable_api.py           # placeholder, future UI-facing endpoint
     outbound/
-      postgres/        # TopologyRepository, TimetableRepository,
-                        # TripRepository impls, SQLAlchemy models/mappers
-                        # for the existing schema
-      kafka/           # EventPublisher impl (FastStream), Event[T] envelope
-  container.py         # Dishka providers wiring ports -> adapters
-  main.py              # entrypoint: start clock + FastStream app
+      postgres/         # TripRepo (shared: sim_engine reads, TripService
+                         # writes), TimetableRepo, TopologyRepository,
+                         # SQLAlchemy models/mappers
+      kafka/             # EventPublisher impl (FastStream), Event[T] envelope
+  container.py           # Dishka providers wiring ports -> adapters
+  main.py                # entrypoint: start sim engine loop + generation
+                          # clock + FastStream app
 ```
 
 Deliberately not sharing code with the future consumer/WebSocket service
@@ -185,29 +217,39 @@ Resolved by the `Train` / `TimetableEntry` / `Trip` split:
 - ~~Double-booking~~ — resolved at the DB level via the `EXCLUDE` constraint
   on `trips` (`train_pk` + overlapping time range).
 
-Still open:
+Resolved by the sim engine / ingestion split:
 
-- **Turnaround**: mostly resolved by construction, assuming a train's
-  turnaround is just its next `timetable_entries` row happening to have the
-  opposite `direction` — no domain logic needed, only correct seed data.
-  Worth confirming that's actually how you intend to author the timetable
-  before writing seed data (each train having separate `FORWARD` and
-  `BACKWARD` entries).
-- **`TripGenerator` scheduling**: does it run on the same 1–2s clock as the
-  other two roles (cheap no-op most ticks, since it only needs to act once a
-  day), or does it deserve its own independent trigger (daily cron, or an
-  on-startup catch-up pass) so a slower generation query never competes with
-  the per-tick position-advancement path? Not decided.
-- **Real-feed inbound port**: still open — a real ATS pushes discrete
-  track-circuit occupancy events, not a fixed clock tick to interpolate
-  between, and doesn't obviously map onto `Trip`/`TimetableEntry` either,
-  since a real feed wouldn't need a "recurring plan" table the same way a
-  simulator does. Revisit once the real data format is known.
-- **Publish granularity**: does every active trip get a `train.positions`
-  event every tick, or only ones whose segment/status actually changed?
-- **Segment speed source**: now blocks two things instead of one — both
-  `PositionAdvancer`'s per-tick math and `TripGenerator`'s
-  `estimated_arrival_time` computation need underground-vs-elevated speed,
-  and the source (a column, a lookup table, a constant per line) still isn't
-  decided. This graduated from "affects live ticks" to "blocks trip
-  generation outright" — worth resolving sooner rather than later.
+- ~~`TripGenerator` scheduling~~ — resolved: independent ~6h trigger,
+  decoupled entirely from the 1–2s position tick.
+- **Real-feed inbound port** — mostly resolved by construction: a real ATS
+  feed adapter would simply replace the sim engine as producer, calling the
+  same `ForUpdatingTrainPosition` port; ingestion's resolver logic doesn't
+  change. Still genuinely open: what shape the real raw signal takes
+  (track-circuit ID vs. coordinate) and whether it maps onto arc-length/
+  fraction the same way the sim engine's raw position does. Revisit once the
+  real data format is known.
+
+Resolved this round:
+
+- ~~Turnaround~~ — confirmed: each train gets separate `FORWARD` and
+  `BACKWARD` `timetable_entries` rows; turnaround needs no domain logic,
+  only correctly authored seed data.
+- ~~Speed profile parameters~~ — resolved: per-line constants
+  (`max_speed_mps`, `acceleration_mps2`), new columns on `lines` (migration
+  not yet written).
+- ~~Short-segment clamp~~ — resolved: deferred as a known, accepted gap. No
+  triangular-profile logic implemented; short segments may show a brief
+  unrealistic speed spike.
+- ~~Publish granularity~~ — resolved: publish on every tick, but downsampled
+  by position delta — a trip only publishes once it's moved more than a
+  threshold (a fraction of the current segment's length) since its last
+  published position. No dwell heartbeat: a stationary trip simply doesn't
+  publish, since Redis already holds its last known position.
+- ~~Shared `TripRepo`~~ — accepted: sim engine reads it directly,
+  `TripService` writes to it, both components of one deployable. Revisit
+  only if sim engine and ingestion are ever split into genuinely separate
+  services.
+
+No open questions remain from this design pass. The next concrete step this
+unblocks is writing the `lines.max_speed_mps` / `lines.acceleration_mps2`
+migration.
