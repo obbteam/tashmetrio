@@ -3,5 +3,5 @@ from abc import ABC, abstractmethod
 
 class ForGeneratingTrip(ABC):
     @abstractmethod
-    def generate() -> None:
+    async def generate(self) -> None:
         pass

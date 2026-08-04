@@ -30,3 +30,4 @@ class Trip(BaseModel):
     is_finished: bool
     
     updated_at: datetime
+    created_at: datetime

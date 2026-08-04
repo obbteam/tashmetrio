@@ -28,7 +28,7 @@ class TimetableRepository(ForLookingUpTimetable):
 
     async def get_timetable(self) -> list[Timetable]:
         async with self._database_session:
-            q = select(TimetableEntries)
+            q = select(TimetableEntries).order_by(TimetableEntries.departure_time)
 
             rows = await self._database_session.execute(q)
             results = rows.scalars().all()

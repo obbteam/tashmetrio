@@ -7,7 +7,7 @@ install:
 	uv sync --active
 	uv lock
 
-generate:
+model-generate:
 	sqlacodegen --generator declarative --outfile $(DB_MODELS_PATH) "$(SQLACODEGEN_URL)"
 	ruff format $(DB_MODELS_PATH)
 
@@ -16,3 +16,6 @@ run:
 
 simulate:
 	python3 -m src.simulator_main
+
+generate:
+	python3 -m src.generator_main

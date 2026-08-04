@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select
@@ -26,9 +27,21 @@ class TripRepository(ForLookingUpTrip):
 
             return Trip.model_validate(result)
 
-    async def get_trips(self) -> list[Trip]:
+    async def get_trips_by_date(self, timestamp: datetime) -> list[Trip]:
         async with self._database_session:
-            q = select(Trips)
+            from_midnight = timestamp.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            to_midnight = from_midnight + timedelta(days=1)
+
+            q = (
+                select(Trips)
+                .where(
+                    Trips.departure_time >= from_midnight,
+                    Trips.departure_time < to_midnight,
+                )
+                .order_by(Trips.departure_time)
+            )
 
             rows = await self._database_session.execute(q)
             results = rows.scalars().all()

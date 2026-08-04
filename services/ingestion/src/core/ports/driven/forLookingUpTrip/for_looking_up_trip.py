@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from uuid import UUID
 
 from src.core.common.models.trip import Trip
@@ -6,7 +7,7 @@ from src.core.common.models.trip import Trip
 
 class ForLookingUpTrip(ABC):
     @abstractmethod
-    async def get_trips(self) -> list[Trip]:
+    async def get_trips_by_date(self, timestamp: datetime) -> list[Trip]:
         pass
 
     @abstractmethod

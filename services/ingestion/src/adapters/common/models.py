@@ -126,6 +126,9 @@ class Lines(Base):
         "LineStations", back_populates="line"
     )
     trains: Mapped[list["Trains"]] = relationship("Trains", back_populates="line")
+    timetable_entries: Mapped[list["TimetableEntries"]] = relationship(
+        "TimetableEntries", back_populates="line"
+    )
     trips: Mapped[list["Trips"]] = relationship("Trips", back_populates="line")
 
 
@@ -337,6 +340,9 @@ class TimetableEntries(Base):
     __tablename__ = "timetable_entries"
     __table_args__ = (
         ForeignKeyConstraint(
+            ["line_id"], ["lines.id"], name="timetable_entries_line_id_fkey"
+        ),
+        ForeignKeyConstraint(
             ["train_id"],
             ["trains.id"],
             ondelete="CASCADE",
@@ -358,7 +364,9 @@ class TimetableEntries(Base):
         nullable=False,
     )
     departure_time: Mapped[datetime.time] = mapped_column(Time, nullable=False)
+    line_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
 
+    line: Mapped["Lines"] = relationship("Lines", back_populates="timetable_entries")
     train: Mapped["Trains"] = relationship("Trains", back_populates="timetable_entries")
     trips: Mapped[list["Trips"]] = relationship(
         "Trips", back_populates="timetable_entry"
@@ -425,6 +433,9 @@ class Trips(Base):
     )
     line_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     current_segment_time: Mapped[datetime.datetime] = mapped_column(
+        DateTime(True), nullable=False, server_default=text("now()")
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), nullable=False, server_default=text("now()")
     )
     current_segment_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)

@@ -1,4 +1,6 @@
-from sqlalchemy import update
+from typing import cast
+
+from sqlalchemy import CursorResult, update
 
 from src.adapters.common.models import TimetableEntries
 from src.adapters.common.unit_of_work import IUnitOfWork
@@ -25,7 +27,7 @@ class TimetableRepository(ForStoringTimetable):
             )
 
             session = self._unit_of_work.get_session()
-            result = await session.execute(stmt)
+            result = cast(CursorResult, await session.execute(stmt))
             await self._unit_of_work.commit()
 
-            return result.scalars().all().count == 1
+            return result.rowcount == 1

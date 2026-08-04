@@ -38,6 +38,7 @@ class TimeTableService(ForUpdatingTimetable):
             Timetable(
                 id=old.id,
                 train_id=new_timetable_info.train_id or old.train_id,
+                line_id=old.line_id,
                 direction=new_timetable_info.direction or old.direction,
                 departure_time=new_timetable_info.departure_time or old.departure_time,
             )

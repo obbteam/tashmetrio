@@ -34,7 +34,7 @@ class Simulator:
             print(f"Found {len(trips)} active trips")
             
             for t in trips:
-                elapsed_time = datetime.now() - t.current_segment_time
+                elapsed_time = datetime.now(tz=settings.TIME_ZONE) - t.current_segment_time
 
                 v_max, a = await self._get_train_speed(line_id=t.line_id)
                 distance = await self._get_segment_length(
@@ -61,7 +61,7 @@ class Simulator:
 
     async def _get_active_trips(self) -> list[Trip]:
         async with self._database_session:
-            current_time = datetime.now()
+            current_time = datetime.now(tz=settings.TIME_ZONE)
             q = select(Trips).where(
                 Trips.departure_time < current_time, Trips.is_finished == False
             )

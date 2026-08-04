@@ -1,4 +1,6 @@
-from sqlalchemy import update
+from typing import cast
+
+from sqlalchemy import CursorResult, update
 
 from src.adapters.common.models import Trips
 from src.adapters.common.unit_of_work import IUnitOfWork
@@ -15,7 +17,7 @@ class TripRepository(ForUpdatingTrip):
             stmt = (
                 update(Trips)
                 .values(
-                    current_position=trip.current_position,
+                    current_position=trip.current_position.to_ewkt,
                     estimated_arrival_time=trip.estiamated_arrival_time,
                     trip_status=trip.trip_status,
                     current_segment_id=trip.current_segment_id,
@@ -26,7 +28,7 @@ class TripRepository(ForUpdatingTrip):
             )
 
             session = self._unit_of_work.get_session()
-            result = await session.execute(stmt)
+            result = cast(CursorResult, await session.execute(stmt))
             await self._unit_of_work.commit()
 
-            return result.scalars().all().count == 1
+            return result.rowcount == 1 
