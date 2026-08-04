@@ -6,4 +6,4 @@ ADD
 
 -- +goose Down
 ALTER TABLE
-    lines DROP COLUMN IF EXISTS current_segment_time;
+    trips DROP COLUMN IF EXISTS current_segment_time;
