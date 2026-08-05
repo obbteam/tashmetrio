@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from src.core.common.exceptions import ErrorCodeEnum, LogicalException
 from src.core.common.models.trip import Trip
@@ -31,7 +32,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         forUpdatingTrip: ForUpdatingTrip,
         forLookingUpStation: ForLookingUpStation,
         forLookingUpTimetable: ForLookingUpTimetable,
-        forStoringTrip: ForStoringTrip
+        forStoringTrip: ForStoringTrip,
     ):
         self.forLookingUpTrip = forLookingUpTrip
         self.forUpdatingTrip = forUpdatingTrip
@@ -50,27 +51,35 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         current_segment_time = old.current_segment_time
         is_finished = False
         new_progress = new_train_position.segment_progress_pct
-        
 
-        if new_progress - old.progress_pct < settings.MIN_PROGRESS_THRESHOLD:
+        if (
+            new_progress < 100
+            and new_progress - old.progress_pct < settings.MIN_PROGRESS_THRESHOLD
+        ):
+            print(f"Delta Progress {new_progress - old.progress_pct} is too small")
+            print(f"Progress {new_progress}, old progress {old.progress_pct}")
             return False
 
         if new_progress >= 100:
+            print(f"Moving {old.id} to the next segment")
+
             next_segment = await self.forLookingUpStation.get_next_segment(
                 line_id=old.line_id, current_segment_id=current_segment
             )
 
+            print(f"Next segment is {next_segment}")
+
             new_progress = 0
-            current_segment_time = datetime.now(tz=settings.TIME_ZONE)
-            
+            current_segment_time = datetime.now(tz=ZoneInfo("UTC"))
+
             if next_segment is None:
                 is_finished = True
+                print("Trip is finished")
             else:
                 current_segment = next_segment
 
-
         # TODO calc new eta, trip status, position
-        new_eta = old.estiamated_arrival_time
+        new_eta = old.estimated_arrival_time
         new_trip_status = old.trip_status
         new_position = old.current_position
 
@@ -81,65 +90,69 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
                 line_id=old.line_id,
                 timetable_entry_id=old.timetable_entry_id,
                 departure_time=old.departure_time,
-                estiamated_arrival_time=new_eta,
+                estimated_arrival_time=new_eta,
                 trip_status=new_trip_status,
                 current_segment_id=current_segment,
                 progress_pct=new_progress,
                 current_position=new_position,
-                updated_at=datetime.now(tz=settings.TIME_ZONE),
+                updated_at=datetime.now(tz=ZoneInfo("UTC")),
                 created_at=old.created_at,
                 is_finished=is_finished,
-                current_segment_time=current_segment_time
+                current_segment_time=current_segment_time,
             )
         )
 
         return result
 
     async def generate(self) -> None:
-        tomorrow = datetime.now(tz=settings.TIME_ZONE) + timedelta(days=1)
-        
+        tomorrow = datetime.now(tz=ZoneInfo("UTC")) + timedelta(days=1)
+
         timetable_entries = await self.forLookingUpTimetable.get_timetable()
-        trips_for_tomorrow = await self.forLookingUpTrip.get_trips_by_date(timestamp=tomorrow)
-        
+        trips_for_tomorrow = await self.forLookingUpTrip.get_trips_by_date(
+            timestamp=tomorrow
+        )
+
         print(f"Found {len(timetable_entries)} timetable entries")
         print(f"Found {len(trips_for_tomorrow)} trips for tomorrow")
-        
+
         for timetable_entry in timetable_entries:
-            target_time = datetime.combine(date=tomorrow.date(), time=timetable_entry.departure_time)
+            naive_dt = datetime.combine(
+                date=tomorrow.date(), time=timetable_entry.departure_time
+            )
+            tashkent_dt = naive_dt.replace(tzinfo=ZoneInfo("Asia/Tashkent"))
+            target_time = tashkent_dt.astimezone(ZoneInfo("UTC"))
             trip_exists = False
-            
+
             for trip in trips_for_tomorrow:
                 if trip.departure_time > target_time:
                     break
-                
-                if timetable_entry.departure_time == target_time:
+
+                if trip.departure_time == target_time:
                     trip_exists = True
                     break
-            
+
             if trip_exists == False:
-                stationInfo = await self.forLookingUpStation.get_start_station(line_id=timetable_entry.line_id, direction=timetable_entry.direction)
-                
-                print(f"Generating a trip for {target_time}")
-                
-                await self.forStoringTrip.store(new_trip=NewTrip(
-                    train_id=timetable_entry.train_id,
-                    timetable_entry_id=timetable_entry.id,
-                    line_id= timetable_entry.line_id,
-                    
-                    departure_time=target_time,
-                    estimated_arrival_time = target_time + timedelta(minutes=settings.DEFAULT_ETA_MINUTES),
-                    
-                    trip_status=NewTrip.TripStatus.ON_TIME,
-                    progress_pct=0,
-                    current_segment_id=stationInfo.segment_id,
-                    current_position=stationInfo.position,
-                    current_segment_time=target_time,
-                    
-                    is_finished=False,
-                ))
-        
-                
-                
-            
-        
-        
+                stationInfo = await self.forLookingUpStation.get_start_station(
+                    line_id=timetable_entry.line_id, direction=timetable_entry.direction
+                )
+
+                print(
+                    f"Generating a trip for {target_time} and {timetable_entry.departure_time}"
+                )
+
+                await self.forStoringTrip.store(
+                    new_trip=NewTrip(
+                        train_id=timetable_entry.train_id,
+                        timetable_entry_id=timetable_entry.id,
+                        line_id=timetable_entry.line_id,
+                        departure_time=target_time,
+                        estimated_arrival_time=target_time
+                        + timedelta(minutes=settings.DEFAULT_ETA_MINUTES),
+                        trip_status=NewTrip.TripStatus.ON_TIME,
+                        progress_pct=0,
+                        current_segment_id=stationInfo.segment_id,
+                        current_position=stationInfo.position,
+                        current_segment_time=target_time,
+                        is_finished=False,
+                    )
+                )

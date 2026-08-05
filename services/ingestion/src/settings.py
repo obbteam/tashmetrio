@@ -3,7 +3,6 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_PATH = Path(__file__).parent
-from zoneinfo import ZoneInfo
 
 
 class Settings(BaseSettings):
@@ -18,7 +17,7 @@ class Settings(BaseSettings):
 
     MIN_PROGRESS_THRESHOLD: float = 1
 
-    DEFAULT_DECEL_BUFFER_M: float = 5
+    DEFAULT_DECEL_BUFFER: float = 0.2
 
     DEFAULT_LINE_SPEED: float = 10
     DEFAULT_LINE_ACCELERATION: float = 20
@@ -26,8 +25,8 @@ class Settings(BaseSettings):
     DEFAULT_LINE_LENGTH_M: float = 2000
     
     DEFAULT_ETA_MINUTES: int = 30
-    
-    TIME_ZONE: ZoneInfo = ZoneInfo(key="Asia/Tashkent")
+
+    DEFAULT_TURNAROUND_BUFFER_MINUTES: int = 5
 
 
 settings = Settings()

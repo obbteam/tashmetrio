@@ -1,11 +1,11 @@
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
+from src.core.common.models.position import Position
 
 from src.adapters.common.database_session import IDatabaseSession
 from src.adapters.common.models import LineStations, Stations
 from src.core.common.enums import Direction
-from src.core.common.models.position import Position
 from src.core.ports.driven.forLookingUpStation.for_looking_up_station import (
     ForLookingUpStation,
 )
@@ -69,11 +69,11 @@ class LineStationsRepository(ForLookingUpStation):
             )
 
             rows = await self._database_session.execute(stmt)
-            results = rows.scalars().all()
+            results = rows.all()
 
             row = results[0] if direction == Direction.FORWARD else results[1]
 
             return StationInfo(
-                segment_id=row.id,
+                segment_id=row.LineStations.id,
                 position=Position(latitude=row.latitude, longitude=row.longitude),
             )

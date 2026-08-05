@@ -2,8 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel
-
+from src.core.common.models.base import BaseModel
 from src.core.common.models.position import Position
 
 
@@ -19,7 +18,7 @@ class Trip(BaseModel):
     line_id: UUID
     
     departure_time: datetime
-    estiamated_arrival_time: datetime
+    estimated_arrival_time: datetime
     
     trip_status: TripStatus
     current_segment_id: UUID

@@ -1,9 +1,8 @@
 from datetime import time
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from src.core.common.enums import Direction
+from src.core.common.models.base import BaseModel
 
 
 class UpdateTimetableRequest(BaseModel):

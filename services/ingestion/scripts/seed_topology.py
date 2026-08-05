@@ -38,10 +38,86 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.adapters.common.database_session import session_maker
 from src.adapters.common.models import Lines, LineStations, Stations
 
-# Keyed by the `name` a line gets in lines.geojson (properties.name).
+# OSM's raw line `name` embeds the route's endpoints (e.g. "Chilanzor Line:
+# Chinor => Buyuk Ipak Yoli") because it comes from one of the two
+# per-direction route relations that dedupe_lines_by_ref() collapsed into
+# one -- it was never meant to be a display name. Map the raw name straight
+# through to whatever name should actually be used going forward. All 4
+# current raw names are seeded below; re-run this script and check stderr
+# for "no LINE_NAME_OVERRIDES entry" warnings if a fresh OSM fetch produces
+# a raw name not covered here.
+LINE_NAME_OVERRIDES: dict[str, str] = {
+    "Chilanzor Line: Chinor => Buyuk Ipak Yoli": "Chilanzor line",
+    "Oʻzbekiston Line: Beruniy - Dustlik": "Oʻzbekiston line",
+    "Yunusobod Line: Turkiston - Ming Orik": "Yunusobod line",
+    "Circle Line: Kipchak - Technopark": "Circle line",
+}
+
+# Same idea for stations: OSM's `name`/`name:en` tags are inconsistent
+# (mixed transliteration, Soviet-era names in parentheses, etc). Defaults to
+# identity for every station currently in stations.geojson -- edit the
+# values you want cleaned up, no need to touch the keys.
+STATION_NAME_OVERRIDES: dict[str, str] = {
+    "Abdulla Qodirii": "Abdulla Qodirii",
+    "Alisher Navoiy": "Alisher Navoiy",
+    "Almas": "Almas",
+    "Almazar (Sabir Rakhimov)": "Almazar",
+    "Amir Timur Square": "Amir Timur Square",
+    "Aybek": "Aybek",
+    "Badamzar": "Badamzar",
+    "Beruniy": "Beruniy",
+    "Buyuk Ipak Yuli (Maxim Gorky)": "Buyuk Ipak Yuli",
+    "Chashtepa": "Chashtepa",
+    "Chilanzar": "Chilanzar",
+    "Chinara": "Chinara",
+    "Chorsu": "Chorsu",
+    "Cosmonauts": "Cosmonauts",
+    "Drujba Narodov": "Drujba Narodov",
+    "Dustlik (Chkalov)": "Dustlik",
+    "Gafur Gulyam": "Gafur Gulyam",
+    "Hamid Alimjan": "Hamid Alimjan",
+    "Khanabad": "Khanabad",
+    "Kipchak": "Kipchak",
+    "Kuruvchilar (Stroiteley)": "Kuruvchilar",
+    "Kuylyuk": "Kuylyuk",
+    "Mashinasozlar (Tashselmash)": "Mashinasozlar",
+    "Matonat": "Matonat",
+    "Milliy Bog (Komsomolskaya)": "Milliy Bog",
+    "Ming Urik": "Ming Urik",
+    "Minor": "Minor",
+    "Mirzo Ulugbek (50 years USSR)": "Mirzo Ulugbek",
+    "Mustaqillik maydoni": "Mustaqillik maydoni",
+    "Novza (Hamza)": "Novza",
+    "Pakhtakor": "Pakhtakor",
+    "Pushkin": "Pushkin",
+    "Qiyot": "Qiyot",
+    "Rakhat": "Rakhat",
+    "Sergeli": "Sergeli",
+    "Shahristan": "Shahristan",
+    "Talaryk": "Talaryk",
+    "Tashkent": "Tashkent",
+    "Technopark": "Technopark",
+    "Tinchlik": "Tinchlik",
+    "Turan": "Turan",
+    "Turkistan": "Turkistan",
+    "Tuzel": "Tuzel",
+    "Uzbekistan": "Uzbekistan",
+    "Uzgarish": "Uzgarish",
+    "Yangiabad": "Yangiabad",
+    "Yangihayot": "Yangihayot",
+    "Yashnabad": "Yashnabad",
+    "Yunus Rajabiy": "Yunus Rajabiy",
+    "Yunusabad": "Yunusabad",
+}
+
+# Keyed by the CLEAN line name (i.e. LINE_NAME_OVERRIDES' values, not the
+# raw OSM name -- these two dicts are meant to be edited independently).
 # TODO: fill in from operator conversations / rolling-stock specs.
 LINE_PERFORMANCE: dict[str, dict[str, float]] = {
-    # "Chilonzor line": {"max_speed_mps": 16.7, "max_acceleration_mps2": 1.0},
+    "Chilanzor line": {"max_speed_mps": 20, "max_acceleration_mps2": 2.0},
+    "Oʻzbekiston line": {"max_speed_mps": 20, "max_acceleration_mps2": 2.0},
+    "Yunusobod line": {"max_speed_mps": 18, "max_acceleration_mps2": 2.0},
+    "Circle line": {"max_speed_mps": 15, "max_acceleration_mps2": 1.5},
 }
 
 
@@ -63,7 +139,8 @@ async def upsert_stations(
 
     for feature in stations_geojson["features"]:
         osm_id = feature["properties"]["osm_id"]
-        name = feature["properties"]["name"]
+        raw_name = feature["properties"]["name"]
+        name = STATION_NAME_OVERRIDES.get(raw_name, raw_name)
         lon, lat = feature["geometry"]["coordinates"]
         geom = f"SRID=4326;POINT({lon} {lat})"
 
@@ -85,17 +162,26 @@ async def upsert_stations(
 async def upsert_lines(
     session: AsyncSession, lines_geojson: dict
 ) -> dict[str, uuid.UUID]:
-    """Returns {line_name: line_id}. Skips lines missing from LINE_PERFORMANCE."""
+    """
+    Returns {raw_line_name: line_id} -- keyed by the RAW osm name (not the
+    cleaned one) because that's what line_stations.json's `line_name` field
+    joins against in upsert_line_stations(). The row actually written to
+    the DB uses the cleaned name.
+
+    Skips lines missing from LINE_PERFORMANCE (looked up by cleaned name).
+    """
     name_to_id: dict[str, uuid.UUID] = {}
 
     for feature in lines_geojson["features"]:
-        name = feature["properties"]["name"]
+        raw_name = feature["properties"]["name"]
+        name = LINE_NAME_OVERRIDES.get(raw_name, raw_name)
         coords = feature["geometry"]["coordinates"]
 
         performance = LINE_PERFORMANCE.get(name)
         if performance is None:
             print(
-                f"[warn] no LINE_PERFORMANCE entry for line '{name}', skipping",
+                f"[warn] no LINE_PERFORMANCE entry for line '{name}' "
+                f"(raw: '{raw_name}'), skipping",
                 file=sys.stderr,
             )
             continue
@@ -122,7 +208,7 @@ async def upsert_lines(
             .returning(Lines.id)
         )
         result = await session.execute(stmt)
-        name_to_id[name] = result.scalar_one()
+        name_to_id[raw_name] = result.scalar_one()
 
     return name_to_id
 

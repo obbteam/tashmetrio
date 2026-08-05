@@ -17,12 +17,16 @@ class TripRepository(ForUpdatingTrip):
             stmt = (
                 update(Trips)
                 .values(
-                    current_position=trip.current_position.to_ewkt,
-                    estimated_arrival_time=trip.estiamated_arrival_time,
+                    estimated_arrival_time=trip.estimated_arrival_time,
+                    
                     trip_status=trip.trip_status,
                     current_segment_id=trip.current_segment_id,
                     progress_pct=trip.progress_pct,
-                    udated_at=trip.updated_at,
+                    current_position=trip.current_position.to_ewkt,
+                    current_segment_time=trip.current_segment_time,
+                    
+                    is_finished=trip.is_finished,
+                    updated_at=trip.updated_at,
                 )
                 .where(Trips.id == trip.id)
             )

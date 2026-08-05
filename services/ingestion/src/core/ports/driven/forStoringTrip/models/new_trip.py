@@ -2,8 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel
-
+from src.core.common.models.base import BaseModel
 from src.core.common.models.position import Position
 
 

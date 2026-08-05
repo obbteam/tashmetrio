@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from src.core.common.models.base import BaseModel
 
 
 class TrainPosition(BaseModel):

@@ -19,3 +19,6 @@ simulate:
 
 generate:
 	python3 -m src.generator_main
+
+seed-operation:
+	python3 -m scripts.seed_operations
