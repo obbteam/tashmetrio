@@ -32,41 +32,38 @@ class Simulator:
         while True:
             trips = await self._get_active_trips()
 
-            print(f"Found {len(trips)} active trips")
+            print(f"[info] Found {len(trips)} active trips")
 
             for t in trips:
-                elapsed_time = datetime.now(tz=ZoneInfo("UTC")) - t.current_segment_time
-                
-                # print(f"Time since last segment {elapsed_time}")
-                
+                try:
+                    elapsed_time = datetime.now(tz=ZoneInfo("UTC")) - t.current_segment_time
 
-                v_max, a = await self._get_train_speed(line_id=t.line_id)
-                distance = await self._get_segment_length(
-                    current_segment_id=t.current_segment_id
-                )
-                
-                # print(f"Distance to next segment {distance}")
-                
-
-                progress = (
-                    self._apply_trapezoidal_velocity(
-                        t=elapsed_time.seconds, v_max=v_max, a=a, distance=distance
+                    v_max, a = await self._get_train_speed(line_id=t.line_id)
+                    distance = await self._get_segment_length(
+                        current_segment_id=t.current_segment_id
                     )
-                    / distance
-                ) * 100
+                    
+                    progress = (
+                        self._apply_trapezoidal_velocity(
+                            t=elapsed_time.seconds, v_max=v_max, a=a, distance=distance
+                        )
+                        / distance
+                    ) * 100
 
-                # print(f"Progress for {t.id} started at {t.departure_time} - {progress}")
-
-                await self._for_updating_train_position.update(
-                    new_train_position=TrainPosition(
-                        trip_id=t.id,
-                        segment_progress_pct=progress,
+                    await self._for_updating_train_position.update(
+                        new_train_position=TrainPosition(
+                            trip_id=t.id,
+                            segment_progress_pct=progress,
+                        )
                     )
-                )
+                except Exception as exc:
+                    print(f"[error] {exc}")
+                    continue
+            
+            
+            print(f"[info] Now sleep for {settings.SIMULATOR_SLEEP_TIME_S}...")
 
-            print(f"Now sleep for {1}...")
-
-            time.sleep(1)
+            time.sleep(settings.SIMULATOR_SLEEP_TIME_S)
 
     async def _get_active_trips(self) -> list[Trip]:
         async with self._database_session:

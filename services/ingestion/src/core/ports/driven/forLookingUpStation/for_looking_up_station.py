@@ -11,5 +11,9 @@ class ForLookingUpStation(ABC):
         pass
     
     @abstractmethod
+    async def get_station_by_id(self, current_segment_id: UUID) -> StationInfo | None:
+        pass
+    
+    @abstractmethod
     async def get_start_station(self, line_id: UUID, direction: Direction) -> StationInfo:
         pass

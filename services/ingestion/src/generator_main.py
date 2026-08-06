@@ -4,6 +4,9 @@ from dishka import Provider, Scope, make_async_container
 
 from src.adapters.common.database_session import IDatabaseSession, get_database_session
 from src.adapters.common.unit_of_work import IUnitOfWork, get_unit_of_work
+from src.adapters.driven.forCalculatingCurrentTrainPosition.train_position_calculator import (
+    TrainPositionCalculator,
+)
 from src.adapters.driven.forLookingUpStation.line_stations_repository import (
     LineStationsRepository as StationLookupRepo,
 )
@@ -20,6 +23,9 @@ from src.adapters.driven.forUpdatingTrip.trip_repository import (
     TripRepository as TripUpdateRepo,
 )
 from src.adapters.driving.forGeneratingTrips.trip_generator import TripGenerator
+from src.core.ports.driven.forCalculatingCurrentTrainPosition.for_calculating_current_train_position import (
+    ForCalculatingCurrentTrainPosition,
+)
 from src.core.ports.driven.forLookingUpStation.for_looking_up_station import (
     ForLookingUpStation,
 )
@@ -50,6 +56,9 @@ async def main():
     trip_service_provider.provide(StationLookupRepo, provides=ForLookingUpStation)
     trip_service_provider.provide(TimeTableLookUpRepo, provides=ForLookingUpTimetable)
     trip_service_provider.provide(TripStoreRepo, provides=ForStoringTrip)
+    trip_service_provider.provide(
+        TrainPositionCalculator, provides=ForCalculatingCurrentTrainPosition
+    )
 
     trip_service_provider.provide(TripService, provides=ForGeneratingTrip)
     trip_service_provider.provide(TripGenerator)

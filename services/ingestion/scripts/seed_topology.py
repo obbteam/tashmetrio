@@ -114,10 +114,10 @@ STATION_NAME_OVERRIDES: dict[str, str] = {
 # raw OSM name -- these two dicts are meant to be edited independently).
 # TODO: fill in from operator conversations / rolling-stock specs.
 LINE_PERFORMANCE: dict[str, dict[str, float]] = {
-    "Chilanzor line": {"max_speed_mps": 20, "max_acceleration_mps2": 2.0},
-    "Oʻzbekiston line": {"max_speed_mps": 20, "max_acceleration_mps2": 2.0},
-    "Yunusobod line": {"max_speed_mps": 18, "max_acceleration_mps2": 2.0},
-    "Circle line": {"max_speed_mps": 15, "max_acceleration_mps2": 1.5},
+    "Chilanzor line": {"max_speed_mps": 30, "max_acceleration_mps2": 5.0},
+    "Oʻzbekiston line": {"max_speed_mps": 30, "max_acceleration_mps2": 5.0},
+    "Yunusobod line": {"max_speed_mps": 30, "max_acceleration_mps2": 5.0},
+    "Circle line": {"max_speed_mps": 25, "max_acceleration_mps2": 4.0},
 }
 
 

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
 
-    MIN_PROGRESS_THRESHOLD: float = 1
+    MIN_PROGRESS_THRESHOLD: float = 0.0
 
     DEFAULT_DECEL_BUFFER: float = 0.2
 
@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     DEFAULT_ETA_MINUTES: int = 30
 
     DEFAULT_TURNAROUND_BUFFER_MINUTES: int = 5
+    
+    SIMULATOR_SLEEP_TIME_S: float = .2
+    GENERATOR_SLEEP_TIME_S: float = 60 * 60 * 6
 
 
 settings = Settings()

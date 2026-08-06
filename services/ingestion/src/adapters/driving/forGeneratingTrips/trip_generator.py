@@ -2,6 +2,7 @@ import time
 
 from dishka import FromDishka
 
+from settings import settings
 from src.core.ports.driving.forGeneratingTrips.for_generating_trip import (
     ForGeneratingTrip,
 )
@@ -16,9 +17,8 @@ class TripGenerator:
 
     async def run(self) -> None:
         while True:
-            print("Generator started...")
+            print("[info] Generator started...")
             await self._for_generating_trip.generate()
 
-            # sleep for 6 hours
-            print("Generator sleeping...")
-            time.sleep(60 * 60 * 6)
+            print(f"[info] Generator sleeping for {settings.GENERATOR_SLEEP_TIME_S}...")
+            time.sleep(settings.GENERATOR_SLEEP_TIME_S)

@@ -1,11 +1,11 @@
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
-from src.core.common.models.position import Position
 
 from src.adapters.common.database_session import IDatabaseSession
 from src.adapters.common.models import LineStations, Stations
 from src.core.common.enums import Direction
+from src.core.common.models.position import Position
 from src.core.ports.driven.forLookingUpStation.for_looking_up_station import (
     ForLookingUpStation,
 )
@@ -35,6 +35,30 @@ class LineStationsRepository(ForLookingUpStation):
             result = row.scalar()
 
             return result
+
+    async def get_station_by_id(self, current_segment_id: UUID) -> StationInfo | None:
+        async with self._database_session:
+            stmt = (
+                select(
+                    LineStations,
+                    func.ST_Y(Stations.geom).label("latitude"),
+                    func.ST_X(Stations.geom).label("longitude"),
+                )
+                .join(Stations, LineStations.station_id == Stations.id)
+                .where(
+                    LineStations.id == current_segment_id,
+                )
+            )
+
+            row = (await self._database_session.execute(stmt)).one_or_none()
+            
+            if row is None:
+                return None
+
+            return StationInfo(
+                segment_id=row.LineStations.id,
+                position=Position(latitude=row.latitude, longitude=row.longitude),
+            )
 
     async def get_start_station(
         self, line_id: UUID, direction: Direction

@@ -22,3 +22,6 @@ generate:
 
 seed-operation:
 	python3 -m scripts.seed_operations
+
+seed-topology:
+	python3 -m scripts.seed_topology

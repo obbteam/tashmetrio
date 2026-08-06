@@ -3,6 +3,9 @@ from zoneinfo import ZoneInfo
 
 from src.core.common.exceptions import ErrorCodeEnum, LogicalException
 from src.core.common.models.trip import Trip
+from src.core.ports.driven.forCalculatingCurrentTrainPosition.for_calculating_current_train_position import (
+    ForCalculatingCurrentTrainPosition,
+)
 from src.core.ports.driven.forLookingUpStation.for_looking_up_station import (
     ForLookingUpStation,
 )
@@ -33,15 +36,18 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         forLookingUpStation: ForLookingUpStation,
         forLookingUpTimetable: ForLookingUpTimetable,
         forStoringTrip: ForStoringTrip,
+        forCalculatingTrainPosition: ForCalculatingCurrentTrainPosition,
     ):
         self.forLookingUpTrip = forLookingUpTrip
         self.forUpdatingTrip = forUpdatingTrip
         self.forLookingUpStation = forLookingUpStation
         self.forLookingUpTimetable = forLookingUpTimetable
         self.forStoringTrip = forStoringTrip
+        self.forCalculatingTrainPosition = forCalculatingTrainPosition
 
     async def update(self, new_train_position: TrainPosition) -> bool:
         old = await self.forLookingUpTrip.get_trip_by_id(new_train_position.trip_id)
+
         if old is None:
             raise LogicalException(
                 http_code=404, error_code=ErrorCodeEnum.TRIP_NOT_FOUND
@@ -49,39 +55,67 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
 
         current_segment = old.current_segment_id
         current_segment_time = old.current_segment_time
-        is_finished = False
-        new_progress = new_train_position.segment_progress_pct
+        new_progress = round(min(max(new_train_position.segment_progress_pct, 0.0), 100.0),2)
+
+        at_boundary = new_progress >= 100
 
         if (
-            new_progress < 100
+            not at_boundary
             and new_progress - old.progress_pct < settings.MIN_PROGRESS_THRESHOLD
         ):
-            print(f"Delta Progress {new_progress - old.progress_pct} is too small")
-            print(f"Progress {new_progress}, old progress {old.progress_pct}")
+            print(
+                f"[info] Delta progress {new_progress - old.progress_pct} is too small. Doing nothing..."
+            )
             return False
 
-        if new_progress >= 100:
-            print(f"Moving {old.id} to the next segment")
+        next_segment = await self.forLookingUpStation.get_next_segment(
+            line_id=old.line_id, current_segment_id=current_segment
+        )
 
-            next_segment = await self.forLookingUpStation.get_next_segment(
-                line_id=old.line_id, current_segment_id=current_segment
+        if not at_boundary:
+            is_finished = False
+            new_position = (
+                await self.forCalculatingTrainPosition.calculate(
+                    current_segment_id=old.current_segment_id,
+                    next_segment_id=next_segment,
+                    segment_progress=new_train_position.segment_progress_pct,
+                )
+                if next_segment
+                else old.current_position
             )
-
-            print(f"Next segment is {next_segment}")
-
+        elif next_segment:
+            print(f"[update] state=ADVANCE_TO_NEXT_SEGMENT next={next_segment}")
+            is_finished = False
             new_progress = 0
+            current_segment = next_segment
             current_segment_time = datetime.now(tz=ZoneInfo("UTC"))
-
-            if next_segment is None:
-                is_finished = True
-                print("Trip is finished")
+            station_info = await self.forLookingUpStation.get_station_by_id(
+                current_segment_id=current_segment
+            )
+            if station_info is None:
+                print(
+                    "[warn] Intermediate station is none. Falling back to the old position"
+                )
+                new_position = old.current_position
             else:
-                current_segment = next_segment
+                new_position = station_info.position
 
-        # TODO calc new eta, trip status, position
+        else:
+            print("[update] state=FINISHED")
+            is_finished = True
+            current_segment_time = datetime.now(tz=ZoneInfo("UTC"))
+            final_station = await self.forLookingUpStation.get_station_by_id(
+                current_segment_id=old.current_segment_id
+            )
+            if final_station is None:
+                print("[warn] Final station is none. Falling back to the old position")
+                new_position = old.current_position
+            else:
+                new_position = final_station.position
+
+        # TODO calc new eta, trip status
         new_eta = old.estimated_arrival_time
         new_trip_status = old.trip_status
-        new_position = old.current_position
 
         result = await self.forUpdatingTrip.update(
             trip=Trip(
@@ -94,7 +128,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
                 trip_status=new_trip_status,
                 current_segment_id=current_segment,
                 progress_pct=new_progress,
-                current_position=new_position,
+                current_position=new_position if new_position else old.current_position,
                 updated_at=datetime.now(tz=ZoneInfo("UTC")),
                 created_at=old.created_at,
                 is_finished=is_finished,
@@ -112,8 +146,8 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
             timestamp=tomorrow
         )
 
-        print(f"Found {len(timetable_entries)} timetable entries")
-        print(f"Found {len(trips_for_tomorrow)} trips for tomorrow")
+        print(f"[info] Found {len(timetable_entries)} timetable entries")
+        print(f"[info] Found {len(trips_for_tomorrow)} trips for tomorrow")
 
         for timetable_entry in timetable_entries:
             naive_dt = datetime.combine(
@@ -137,7 +171,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
                 )
 
                 print(
-                    f"Generating a trip for {target_time} and {timetable_entry.departure_time}"
+                    f"[info] Generating a trip for {target_time} and {timetable_entry.departure_time}"
                 )
 
                 await self.forStoringTrip.store(
