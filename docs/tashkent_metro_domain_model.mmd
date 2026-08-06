@@ -4,6 +4,7 @@ erDiagram
     STATION ||--o{ TRANSFER : "connects (station_a)"
     STATION ||--o{ TRANSFER : "connects (station_b)"
     LINE ||--o{ TRAIN : operates
+    LINE ||--o{ TIMETABLE_ENTRY : schedules
     TRAIN ||--o{ TIMETABLE_ENTRY : scheduled_as
     TRAIN ||--o{ TRIP : runs
     TIMETABLE_ENTRY ||--o{ TRIP : realized_as
@@ -47,6 +48,7 @@ erDiagram
     TIMETABLE_ENTRY {
         uuid id PK
         uuid train_id FK
+        uuid line_id FK
         string direction
         time departure_time
     }
@@ -64,6 +66,7 @@ erDiagram
         decimal progress_pct
         geometry current_position
         timestamp updated_at
+        timestamp created_at
     }
     INCIDENT {
         uuid id PK

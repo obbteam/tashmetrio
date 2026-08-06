@@ -2,10 +2,10 @@ import time
 
 from dishka import FromDishka
 
-from settings import settings
 from src.core.ports.driving.forGeneratingTrips.for_generating_trip import (
     ForGeneratingTrip,
 )
+from src.settings import settings
 
 
 class TripGenerator:
