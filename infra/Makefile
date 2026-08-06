@@ -9,6 +9,8 @@ up:
 	@until docker compose exec -T db pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB) > /dev/null 2>&1; do sleep 1; done
 	@echo "Postgres is up on localhost:$(POSTGRES_PORT)"
 	@echo "Redis is up on localhost:$(REDIS_PORT)"
+	@echo "Kafka is up on localhost:$(KAFKA_PORT)"
+
  
 down:
 	docker compose down
