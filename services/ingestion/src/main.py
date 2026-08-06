@@ -7,8 +7,8 @@ from src.adapters.common.unit_of_work import IUnitOfWork, get_unit_of_work
 from src.adapters.driven.forLookingUpTimetable.timetable_repository import (
     TimetableRepository as TimeTableLookUpRepo,
 )
-from src.adapters.driven.forStoringTimetable.timetable_repository import (
-    TimetableRepository as TimeTableStoreRepo,
+from src.adapters.driven.forPersistingTimetable.timetable_repository import (
+    TimetableRepository,
 )
 from src.adapters.driving.forUpdatingTimetable.timetable_update_router import (
     router as timetable_router,
@@ -16,8 +16,8 @@ from src.adapters.driving.forUpdatingTimetable.timetable_update_router import (
 from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import (
     ForLookingUpTimetable,
 )
-from src.core.ports.driven.forStoringTimetable.for_storing_timetable import (
-    ForStoringTimetable,
+from src.core.ports.driven.forPersistingTimetable.for_persisting_timetable import (
+    ForPersistingTimetable,
 )
 from src.core.ports.driving.forUpdatingTimetable.for_updating_timetable import (
     ForUpdatingTimetable,
@@ -39,7 +39,7 @@ def setup_app() -> FastAPI:
     )
 
     timetable_service_provider.provide(TimeTableLookUpRepo, provides=ForLookingUpTimetable)
-    timetable_service_provider.provide(TimeTableStoreRepo, provides=ForStoringTimetable)
+    timetable_service_provider.provide(TimetableRepository, provides=ForPersistingTimetable)
     timetable_service_provider.provide(TimeTableService, provides=ForUpdatingTimetable)
 
     container = make_async_container(timetable_service_provider)

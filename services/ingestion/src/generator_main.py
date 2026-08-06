@@ -16,11 +16,8 @@ from src.adapters.driven.forLookingUpTimetable.timetable_repository import (
 from src.adapters.driven.forLookingUpTrip.trip_repository import (
     TripRepository as TripLookUpRepo,
 )
-from src.adapters.driven.forStoringTrip.trip_repository import (
-    TripRepository as TripStoreRepo,
-)
-from src.adapters.driven.forUpdatingTrip.trip_repository import (
-    TripRepository as TripUpdateRepo,
+from src.adapters.driven.forPersistingTrip.trip_repository import (
+    TripRepository,
 )
 from src.adapters.driving.forGeneratingTrips.trip_generator import TripGenerator
 from src.core.ports.driven.forCalculatingCurrentTrainPosition.for_calculating_current_train_position import (
@@ -33,8 +30,9 @@ from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import
     ForLookingUpTimetable,
 )
 from src.core.ports.driven.forLookingUpTrip.for_looking_up_trip import ForLookingUpTrip
-from src.core.ports.driven.forStoringTrip.for_storing_trip import ForStoringTrip
-from src.core.ports.driven.forUpdatingTrip.for_updating_trip import ForUpdatingTrip
+from src.core.ports.driven.forPersistingTrip.for_persisting_trip import (
+    ForPersistingTrip,
+)
 from src.core.ports.driving.forGeneratingTrips.for_generating_trip import (
     ForGeneratingTrip,
 )
@@ -52,10 +50,9 @@ async def main():
     )
 
     trip_service_provider.provide(TripLookUpRepo, provides=ForLookingUpTrip)
-    trip_service_provider.provide(TripUpdateRepo, provides=ForUpdatingTrip)
+    trip_service_provider.provide(TripRepository, provides=ForPersistingTrip)
     trip_service_provider.provide(StationLookupRepo, provides=ForLookingUpStation)
     trip_service_provider.provide(TimeTableLookUpRepo, provides=ForLookingUpTimetable)
-    trip_service_provider.provide(TripStoreRepo, provides=ForStoringTrip)
     trip_service_provider.provide(
         TrainPositionCalculator, provides=ForCalculatingCurrentTrainPosition
     )

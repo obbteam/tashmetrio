@@ -13,9 +13,10 @@ from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import
     ForLookingUpTimetable,
 )
 from src.core.ports.driven.forLookingUpTrip.for_looking_up_trip import ForLookingUpTrip
-from src.core.ports.driven.forStoringTrip.for_storing_trip import ForStoringTrip
-from src.core.ports.driven.forStoringTrip.models.new_trip import NewTrip
-from src.core.ports.driven.forUpdatingTrip.for_updating_trip import ForUpdatingTrip
+from src.core.ports.driven.forPersistingTrip.for_persisting_trip import (
+    ForPersistingTrip,
+)
+from src.core.ports.driven.forPersistingTrip.models.new_trip import NewTrip
 from src.core.ports.driving.forGeneratingTrips.for_generating_trip import (
     ForGeneratingTrip,
 )
@@ -32,17 +33,17 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
     def __init__(
         self,
         forLookingUpTrip: ForLookingUpTrip,
-        forUpdatingTrip: ForUpdatingTrip,
+        forUpdatingTrip: ForPersistingTrip,
         forLookingUpStation: ForLookingUpStation,
         forLookingUpTimetable: ForLookingUpTimetable,
-        forStoringTrip: ForStoringTrip,
+        forPersistingTrip: ForPersistingTrip,
         forCalculatingTrainPosition: ForCalculatingCurrentTrainPosition,
     ):
         self.forLookingUpTrip = forLookingUpTrip
         self.forUpdatingTrip = forUpdatingTrip
         self.forLookingUpStation = forLookingUpStation
         self.forLookingUpTimetable = forLookingUpTimetable
-        self.forStoringTrip = forStoringTrip
+        self.forPersistingTrip = forPersistingTrip
         self.forCalculatingTrainPosition = forCalculatingTrainPosition
 
     async def update(self, new_train_position: TrainPosition) -> bool:
@@ -174,7 +175,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
                     f"[info] Generating a trip for {target_time} and {timetable_entry.departure_time}"
                 )
 
-                await self.forStoringTrip.store(
+                await self.forPersistingTrip.save(
                     new_trip=NewTrip(
                         train_id=timetable_entry.train_id,
                         timetable_entry_id=timetable_entry.id,

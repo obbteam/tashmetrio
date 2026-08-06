@@ -4,8 +4,8 @@ from src.core.common.models.timetable import Timetable
 from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import (
     ForLookingUpTimetable,
 )
-from src.core.ports.driven.forStoringTimetable.for_storing_timetable import (
-    ForStoringTimetable,
+from src.core.ports.driven.forPersistingTimetable.for_persisting_timetable import (
+    ForPersistingTimetable,
 )
 from src.core.ports.driving.forUpdatingTimetable.for_updating_timetable import (
     ForUpdatingTimetable,
@@ -18,10 +18,10 @@ from src.core.ports.driving.forUpdatingTimetable.models.timetable_info import (
 class TimeTableService(ForUpdatingTimetable):
     def __init__(
         self,
-        forStoringTimetable: ForStoringTimetable,
+        forPersistingTimetable: ForPersistingTimetable,
         forLookingUpTimetable: ForLookingUpTimetable,
     ):
-        self.forStoringTimetable = forStoringTimetable
+        self.forPersistingTimetable = forPersistingTimetable
         self.forLookingUpTimetable = forLookingUpTimetable
 
     async def update(self, new_timetable_info: TimetableInfo) -> bool:
@@ -34,7 +34,7 @@ class TimeTableService(ForUpdatingTimetable):
                 http_code=404, error_code=ErrorCodeEnum.TIMETABLE_NOT_FOUND
             )
 
-        result = await self.forStoringTimetable.store(
+        result = await self.forPersistingTimetable.save(
             Timetable(
                 id=old.id,
                 train_id=new_timetable_info.train_id or old.train_id,
