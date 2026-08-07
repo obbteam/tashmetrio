@@ -17,6 +17,12 @@ from src.core.ports.driven.forPersistingTrip.for_persisting_trip import (
     ForPersistingTrip,
 )
 from src.core.ports.driven.forPersistingTrip.models.new_trip import NewTrip
+from src.core.ports.driven.forPublishingTrainPosition.for_publishing_train_position import (
+    ForPublishingTrainPosition,
+)
+from src.core.ports.driven.forPublishingTrainPosition.models.train_position import (
+    TrainPosition as NewTrainPosition,
+)
 from src.core.ports.driving.forGeneratingTrips.for_generating_trip import (
     ForGeneratingTrip,
 )
@@ -38,6 +44,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         forLookingUpTimetable: ForLookingUpTimetable,
         forPersistingTrip: ForPersistingTrip,
         forCalculatingTrainPosition: ForCalculatingCurrentTrainPosition,
+        forPublishingTrainPosition: ForPublishingTrainPosition,
     ):
         self.forLookingUpTrip = forLookingUpTrip
         self.forUpdatingTrip = forUpdatingTrip
@@ -45,6 +52,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         self.forLookingUpTimetable = forLookingUpTimetable
         self.forPersistingTrip = forPersistingTrip
         self.forCalculatingTrainPosition = forCalculatingTrainPosition
+        self.forPublishingTrainPosition = forPublishingTrainPosition
 
     async def update(self, new_train_position: TrainPosition) -> bool:
         old = await self.forLookingUpTrip.get_trip_by_id(new_train_position.trip_id)
@@ -56,7 +64,9 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
 
         current_segment = old.current_segment_id
         current_segment_time = old.current_segment_time
-        new_progress = round(min(max(new_train_position.segment_progress_pct, 0.0), 100.0),2)
+        new_progress = round(
+            min(max(new_train_position.segment_progress_pct, 0.0), 100.0), 2
+        )
 
         at_boundary = new_progress >= 100
 
@@ -118,24 +128,38 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         new_eta = old.estimated_arrival_time
         new_trip_status = old.trip_status
 
-        result = await self.forUpdatingTrip.update(
-            trip=Trip(
-                id=old.id,
-                train_id=old.train_id,
-                line_id=old.line_id,
-                timetable_entry_id=old.timetable_entry_id,
-                departure_time=old.departure_time,
-                estimated_arrival_time=new_eta,
-                trip_status=new_trip_status,
-                current_segment_id=current_segment,
-                progress_pct=new_progress,
-                current_position=new_position if new_position else old.current_position,
-                updated_at=datetime.now(tz=ZoneInfo("UTC")),
-                created_at=old.created_at,
-                is_finished=is_finished,
-                current_segment_time=current_segment_time,
-            )
+        new_trip = Trip(
+            id=old.id,
+            train_id=old.train_id,
+            line_id=old.line_id,
+            timetable_entry_id=old.timetable_entry_id,
+            departure_time=old.departure_time,
+            estimated_arrival_time=new_eta,
+            trip_status=new_trip_status,
+            current_segment_id=current_segment,
+            progress_pct=new_progress,
+            current_position=new_position if new_position else old.current_position,
+            updated_at=datetime.now(tz=ZoneInfo("UTC")),
+            created_at=old.created_at,
+            is_finished=is_finished,
+            current_segment_time=current_segment_time,
         )
+
+        result = await self.forUpdatingTrip.update(trip=new_trip)
+
+        if result is True:
+            await self.forPublishingTrainPosition.publish(
+                train_position=NewTrainPosition(
+                    trip_id=new_trip.id,
+                    train_id=new_trip.train_id,
+                    line_id=new_trip.line_id,
+                    current_segment_id=new_trip.current_segment_id,
+                    progress_pct=new_trip.progress_pct,
+                    position=new_trip.current_position,
+                    trip_status=new_trip.trip_status,
+                    is_finished=new_trip.is_finished,
+                )
+            )
 
         return result
 

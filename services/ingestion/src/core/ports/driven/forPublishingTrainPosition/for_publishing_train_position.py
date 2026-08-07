@@ -7,5 +7,5 @@ from src.core.ports.driven.forPublishingTrainPosition.models.train_position impo
 
 class ForPublishingTrainPosition(ABC):
     @abstractmethod
-    def publish(self, train_position: TrainPosition) -> bool:
+    async def publish(self, train_position: TrainPosition) -> None:
         pass

@@ -40,6 +40,7 @@ from src.core.trip_service import TripService
 
 
 async def main():
+
     trip_service_provider = Provider(scope=Scope.APP)
 
     trip_service_provider.provide(
@@ -56,7 +57,6 @@ async def main():
     trip_service_provider.provide(
         TrainPositionCalculator, provides=ForCalculatingCurrentTrainPosition
     )
-
     trip_service_provider.provide(TripService, provides=ForGeneratingTrip)
     trip_service_provider.provide(TripGenerator)
 
