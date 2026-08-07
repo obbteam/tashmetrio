@@ -25,3 +25,6 @@ seed-operation:
 
 seed-topology:
 	python3 -m scripts.seed_topology
+	
+kafka-topics:
+	python3 -m scripts.create_kafka_topics
