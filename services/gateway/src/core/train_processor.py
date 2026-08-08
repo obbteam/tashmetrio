@@ -14,4 +14,7 @@ class TrainProcessor(ForProcessingTrainUpdates):
         self._forCachingTrainUpdates = forCachingTrainUpdates
 
     async def process(self, train_position: TrainPosition) -> None:
-        await self._forCachingTrainUpdates.cache(train_position=train_position)
+        if train_position.is_finished == True:
+            await self._forCachingTrainUpdates.delete(train_id=train_position.train_id)
+        else:
+            await self._forCachingTrainUpdates.cache(train_position=train_position)

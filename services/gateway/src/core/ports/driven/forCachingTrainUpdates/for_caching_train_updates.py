@@ -18,3 +18,7 @@ class ForCachingTrainPosition(ABC):
     @abstractmethod
     async def get_all(self) -> list[TrainPosition]:
         pass
+
+    @abstractmethod
+    async def delete(self, train_id: UUID) -> None:
+        pass

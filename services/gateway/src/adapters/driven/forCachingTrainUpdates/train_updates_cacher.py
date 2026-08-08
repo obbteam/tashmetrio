@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from redis.asyncio import Redis
+
 from src.core.ports.driven.forCachingTrainUpdates.for_caching_train_updates import (
     ForCachingTrainPosition,
 )
@@ -30,5 +31,5 @@ class TrainUpdatesCacher(ForCachingTrainPosition):
         raw = await self._redis.hgetall(_KEY)
         return [TrainPosition.model_validate_json(v) for v in raw.values()]
 
-    async def forget(self, train_id: UUID) -> None:
+    async def delete(self, train_id: UUID) -> None:
         await self._redis.hdel(_KEY, str(train_id))
