@@ -9,3 +9,7 @@ class ForUpdatingTimetable(ABC):
     @abstractmethod
     async def update(self, new_timetable_info: TimetableInfo) -> bool:
         pass
+    
+    @abstractmethod
+    async def get_all(self) -> list[TimetableInfo]:
+        pass

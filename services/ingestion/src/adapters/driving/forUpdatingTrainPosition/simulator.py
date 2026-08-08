@@ -1,4 +1,4 @@
-import time
+import asyncio
 from datetime import datetime
 from math import sqrt
 from uuid import UUID
@@ -63,7 +63,7 @@ class Simulator:
             
             print(f"[info] Now sleep for {settings.SIMULATOR_SLEEP_TIME_S}...")
 
-            time.sleep(settings.SIMULATOR_SLEEP_TIME_S)
+            await asyncio.sleep(settings.SIMULATOR_SLEEP_TIME_S)
 
     async def _get_active_trips(self) -> list[Trip]:
         async with self._database_session:

@@ -1,4 +1,4 @@
-import time
+import asyncio
 
 from dishka import FromDishka
 
@@ -21,4 +21,4 @@ class TripGenerator:
             await self._for_generating_trip.generate()
 
             print(f"[info] Generator sleeping for {settings.GENERATOR_SLEEP_TIME_S}...")
-            time.sleep(settings.GENERATOR_SLEEP_TIME_S)
+            await asyncio.sleep(settings.GENERATOR_SLEEP_TIME_S)

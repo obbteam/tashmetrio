@@ -31,5 +31,10 @@ async def update(
         ),
     )
 
+@router.get("/timetable")
+async def get_all(
+        for_updating_timetable: FromDishka[ForUpdatingTimetable],
+)->list[TimetableInfo]:
+    return await for_updating_timetable.get_all()
 
 __all__ = ["router"]

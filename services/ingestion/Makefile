@@ -12,7 +12,7 @@ model-generate:
 	ruff format $(DB_MODELS_PATH)
 
 run:
-	fastapi dev src/main.py --port=8090
+	fastapi dev src/main.py --port=8091
 
 simulate:
 	python3 -m src.simulator_main

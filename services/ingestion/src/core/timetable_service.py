@@ -1,4 +1,3 @@
-
 from src.core.common.exceptions import ErrorCodeEnum, LogicalException
 from src.core.common.models.timetable import Timetable
 from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import (
@@ -25,7 +24,9 @@ class TimeTableService(ForUpdatingTimetable):
         self.forLookingUpTimetable = forLookingUpTimetable
 
     async def update(self, new_timetable_info: TimetableInfo) -> bool:
-        old = await self.forLookingUpTimetable.get_timetable_by_id(id=new_timetable_info.timetable_id)
+        old = await self.forLookingUpTimetable.get_timetable_by_id(
+            id=new_timetable_info.timetable_id
+        )
         # TODO should also check if the train is not booked at the new departure time
         # by getting all the trips and checking if the new departure time is not
 
@@ -50,3 +51,16 @@ class TimeTableService(ForUpdatingTimetable):
             )
 
         return result
+
+    async def get_all(self) -> list[TimetableInfo]:
+        timetable_entries = await self.forLookingUpTimetable.get_timetable()
+
+        return [
+            TimetableInfo(
+                timetable_id=t.id,
+                train_id=t.train_id,
+                direction=t.direction,
+                departure_time=t.departure_time,
+            )
+            for t in timetable_entries
+        ]
