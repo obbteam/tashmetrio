@@ -18,7 +18,10 @@ class TripGenerator:
     async def run(self) -> None:
         while True:
             print("[info] Generator started...")
-            await self._for_generating_trip.generate()
+            await self._for_generating_trip.generate_trips_from_timetable()
 
             print(f"[info] Generator sleeping for {settings.GENERATOR_SLEEP_TIME_S}...")
             await asyncio.sleep(settings.GENERATOR_SLEEP_TIME_S)
+    
+    async def generate_test_trips(self) -> None:
+        await self._for_generating_trip.generate_trips_from_now()

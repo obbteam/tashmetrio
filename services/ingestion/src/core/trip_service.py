@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from src.core.common.enums import Direction
 from src.core.common.exceptions import ErrorCodeEnum, LogicalException
 from src.core.common.models.trip import Trip
 from src.core.ports.driven.forCalculatingCurrentTrainPosition.for_calculating_current_train_position import (
@@ -163,7 +164,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
 
         return result
 
-    async def generate(self) -> None:
+    async def generate_trips_from_timetable(self) -> None:
         tomorrow = datetime.now(tz=ZoneInfo("UTC")) + timedelta(days=1)
 
         timetable_entries = await self.forLookingUpTimetable.get_timetable()
@@ -215,3 +216,33 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
                         is_finished=False,
                     )
                 )
+
+    async def generate_trips_from_now(self) -> None:
+        target_time = datetime.now(tz=ZoneInfo("UTC"))
+
+        # we take only first 4 timetable_entries and replace their departure time
+        timetable_entries = await self.forLookingUpTimetable.get_timetable()
+
+        for i in range(4):
+            stationInfo = await self.forLookingUpStation.get_start_station(
+                line_id=timetable_entries[i].line_id, direction=Direction.FORWARD
+            )
+
+            new_trip = NewTrip(
+                train_id=timetable_entries[i].train_id,
+                timetable_entry_id=timetable_entries[i].id,
+                line_id=timetable_entries[i].line_id,
+                departure_time=target_time,
+                estimated_arrival_time=target_time
+                + timedelta(minutes=settings.DEFAULT_ETA_MINUTES),
+                trip_status=NewTrip.TripStatus.ON_TIME,
+                progress_pct=0,
+                current_segment_id=stationInfo.segment_id,
+                current_position=stationInfo.position,
+                current_segment_time=target_time,
+                is_finished=False,
+            )
+
+            print(f"[info] Generating test trip - {new_trip}")
+
+            await self.forPersistingTrip.save(new_trip=new_trip)

@@ -17,8 +17,11 @@ run:
 simulate:
 	python3 -m src.simulator_main
 
-generate:
+run-generator-loop:
 	python3 -m src.generator_main
+
+run-generator-once:
+	python3 -m src.generator_main --once
 
 seed-operation:
 	python3 -m scripts.seed_operations

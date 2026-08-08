@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 from dishka import Provider, Scope, make_async_container
 
@@ -47,8 +48,7 @@ from src.core.ports.driving.forGeneratingTrips.for_generating_trip import (
 from src.core.trip_service import TripService
 
 
-async def main():
-
+async def run_generator():
     trip_service_provider = Provider(scope=Scope.APP)
 
     trip_service_provider.provide(
@@ -65,11 +65,13 @@ async def main():
     trip_service_provider.provide(
         TrainPositionCalculator, provides=ForCalculatingCurrentTrainPosition
     )
-    trip_service_provider.provide(get_kafka_event_publisher, scope=Scope.APP, provides=IEventPublisher)
+    trip_service_provider.provide(
+        get_kafka_event_publisher, scope=Scope.APP, provides=IEventPublisher
+    )
 
     trip_service_provider.provide(
-            TrainPositionBroker, provides=ForPublishingTrainPosition
-        )
+        TrainPositionBroker, provides=ForPublishingTrainPosition
+    )
     trip_service_provider.provide(TripService, provides=ForGeneratingTrip)
     trip_service_provider.provide(TripGenerator)
 
@@ -79,5 +81,42 @@ async def main():
     await trip_generator.run()
 
 
+async def generate_once():
+    trip_service_provider = Provider(scope=Scope.APP)
+
+    trip_service_provider.provide(
+        get_database_session, scope=Scope.APP, provides=IDatabaseSession
+    )
+    trip_service_provider.provide(
+        get_unit_of_work, scope=Scope.APP, provides=IUnitOfWork
+    )
+
+    trip_service_provider.provide(TripLookUpRepo, provides=ForLookingUpTrip)
+    trip_service_provider.provide(TripRepository, provides=ForPersistingTrip)
+    trip_service_provider.provide(StationLookupRepo, provides=ForLookingUpStation)
+    trip_service_provider.provide(TimeTableLookUpRepo, provides=ForLookingUpTimetable)
+    trip_service_provider.provide(
+        TrainPositionCalculator, provides=ForCalculatingCurrentTrainPosition
+    )
+    trip_service_provider.provide(
+        get_kafka_event_publisher, scope=Scope.APP, provides=IEventPublisher
+    )
+
+    trip_service_provider.provide(
+        TrainPositionBroker, provides=ForPublishingTrainPosition
+    )
+    trip_service_provider.provide(TripService, provides=ForGeneratingTrip)
+    trip_service_provider.provide(TripGenerator)
+
+    container = make_async_container(trip_service_provider)
+
+    trip_generator = await container.get(TripGenerator)
+    await trip_generator.generate_test_trips()
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    if "--once" in sys.argv:
+        asyncio.run(generate_once())
+    else:
+        asyncio.run(run_generator())
+
