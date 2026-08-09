@@ -1,6 +1,7 @@
 from typing import cast
+from uuid import UUID
 
-from sqlalchemy import CursorResult, update
+from sqlalchemy import CursorResult, select, update
 
 from src.adapters.common.models import TimetableEntries
 from src.adapters.common.unit_of_work import IUnitOfWork
@@ -31,3 +32,27 @@ class TimetableRepository(ForPersistingTimetable):
             await self._unit_of_work.commit()
 
             return result.rowcount == 1
+
+    async def get_timetable_by_id(self, id: UUID) -> Timetable | None:
+        async with self._unit_of_work.get_session() as database_session:
+            q = select(TimetableEntries).where(TimetableEntries.id == id)
+
+            rows = await database_session.execute(q)
+            result = rows.scalar()
+
+            if result is None:
+                return None
+
+            return Timetable.model_validate(result)
+
+    async def get_timetable(self) -> list[Timetable]:
+        async with self._unit_of_work.get_session() as database_session:
+            q = select(TimetableEntries).order_by(TimetableEntries.departure_time)
+
+            rows = await database_session.execute(q)
+            results = rows.scalars().all()
+
+            if not results:
+                return []
+
+            return [Timetable.model_validate(r) for r in results]

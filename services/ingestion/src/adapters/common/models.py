@@ -118,6 +118,7 @@ class Lines(Base):
     max_acceleration_mps2: Mapped[decimal.Decimal] = mapped_column(
         Numeric(5, 2), nullable=False
     )
+    color_hex: Mapped[Optional[str]] = mapped_column(Text)
 
     incidents: Mapped[list["Incidents"]] = relationship(
         "Incidents", back_populates="line"
