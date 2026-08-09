@@ -5,6 +5,7 @@ from dishka import Provider, Scope, make_async_container
 from dishka.integrations.fastapi import setup_dishka as fastapi_setup_dishka
 from dishka_faststream import setup_dishka as faststream_setup_dishka
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from faststream import FastStream
 from redis.asyncio import Redis as AsyncRedis
 
@@ -37,6 +38,11 @@ from src.core.ports.driving.forProcessingTrainUpdates.for_processing_train_updat
 )
 from src.core.train_processor import TrainProcessor
 
+origins = [
+    "http://localhost",
+    "http://localhost:5173"
+]
+
 
 def build_gateway_provier() -> Provider:
     provider = Provider(scope=Scope.APP)
@@ -58,19 +64,23 @@ async def main():
     faststream_app = FastStream(broker)
 
     fastapi_app = FastAPI()
+    fastapi_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     fastapi_app.include_router(router=router)
-    
+
     faststream_setup_dishka(
         container=container,
         app=faststream_app,
         auto_inject=True,
         finalize_container=True,
     )
-    
-    fastapi_setup_dishka(
-        container=container,
-        app=fastapi_app
-    )
+
+    fastapi_setup_dishka(container=container, app=fastapi_app)
 
     config = uvicorn.Config(fastapi_app, host="0.0.0.0", port=8000)
     server = uvicorn.Server(config)

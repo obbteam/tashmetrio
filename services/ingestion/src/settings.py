@@ -1,3 +1,4 @@
+from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
 
@@ -24,6 +25,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     MIN_PROGRESS_THRESHOLD: float = 0.0
+    
+    MIN_TIME_AT_STATION_S: float = 20.0
 
     DEFAULT_DECEL_BUFFER: float = 0.2
 
@@ -32,7 +35,7 @@ class Settings(BaseSettings):
 
     DEFAULT_LINE_LENGTH_M: float = 2000
 
-    DEFAULT_ETA_MINUTES: int = 30
+    DEFAULT_ETA_MINUTES: int = 1
 
     DEFAULT_TURNAROUND_BUFFER_MINUTES: int = 5
 

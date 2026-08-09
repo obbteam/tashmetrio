@@ -10,10 +10,10 @@ from src.core.ports.driven.forCalculatingCurrentTrainPosition.for_calculating_cu
 from src.core.ports.driven.forLookingUpStation.for_looking_up_station import (
     ForLookingUpStation,
 )
-from src.core.ports.driven.forLookingUpTimetable.for_looking_up_timetable import (
-    ForLookingUpTimetable,
-)
 from src.core.ports.driven.forLookingUpTrip.for_looking_up_trip import ForLookingUpTrip
+from src.core.ports.driven.forPersistingTimetable.for_persisting_timetable import (
+    ForPersistingTimetable,
+)
 from src.core.ports.driven.forPersistingTrip.for_persisting_trip import (
     ForPersistingTrip,
 )
@@ -42,7 +42,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         forLookingUpTrip: ForLookingUpTrip,
         forUpdatingTrip: ForPersistingTrip,
         forLookingUpStation: ForLookingUpStation,
-        forLookingUpTimetable: ForLookingUpTimetable,
+        forPersistingTimetable: ForPersistingTimetable,
         forPersistingTrip: ForPersistingTrip,
         forCalculatingTrainPosition: ForCalculatingCurrentTrainPosition,
         forPublishingTrainPosition: ForPublishingTrainPosition,
@@ -50,7 +50,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         self.forLookingUpTrip = forLookingUpTrip
         self.forUpdatingTrip = forUpdatingTrip
         self.forLookingUpStation = forLookingUpStation
-        self.forLookingUpTimetable = forLookingUpTimetable
+        self.forPersistingTimetable = forPersistingTimetable
         self.forPersistingTrip = forPersistingTrip
         self.forCalculatingTrainPosition = forCalculatingTrainPosition
         self.forPublishingTrainPosition = forPublishingTrainPosition
@@ -167,7 +167,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
     async def generate_trips_from_timetable(self) -> None:
         tomorrow = datetime.now(tz=ZoneInfo("UTC")) + timedelta(days=1)
 
-        timetable_entries = await self.forLookingUpTimetable.get_timetable()
+        timetable_entries = await self.forPersistingTimetable.get_timetable()
         trips_for_tomorrow = await self.forLookingUpTrip.get_trips_by_date(
             timestamp=tomorrow
         )
@@ -221,7 +221,7 @@ class TripService(ForUpdatingTrainPosition, ForGeneratingTrip):
         target_time = datetime.now(tz=ZoneInfo("UTC"))
 
         # we take only first 4 timetable_entries and replace their departure time
-        timetable_entries = await self.forLookingUpTimetable.get_timetable()
+        timetable_entries = await self.forPersistingTimetable.get_timetable()
 
         for i in range(4):
             stationInfo = await self.forLookingUpStation.get_start_station(

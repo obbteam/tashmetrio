@@ -1,8 +1,13 @@
-import type { SocketStatus } from '../hooks/useTrainSocket'
+import type { ActivityEvent, SocketStatus } from '../hooks/useTrainSocket'
 import type { LineTopology, StationSummary } from '../types/topology'
+import type { TrainPositionData } from '../types/trainPosition'
+import { ActivityTicker } from './ActivityTicker'
+import { Header } from './Header'
 import { Legend } from './Legend'
+import { NetworkHealth } from './NetworkHealth'
 import { StationDetail } from './StationDetail'
 import { StatsBar } from './StatsBar'
+import { TrainDetail } from './TrainDetail'
 
 interface SidebarProps {
   topologyError: string | null
@@ -13,12 +18,11 @@ interface SidebarProps {
   hiddenLineIds: Set<string>
   onToggleLine: (lineId: string) => void
   selectedStation: StationSummary | null
-}
-
-const WS_STATUS_LABEL: Record<SocketStatus, string> = {
-  connecting: 'connecting…',
-  open: 'live',
-  closed: 'disconnected — retrying…',
+  selectedTrain: TrainPositionData | undefined
+  isFollowing: boolean
+  onStopFollowing: () => void
+  networkHealth: { delayedCount: number; cancelledCount: number }
+  events: ActivityEvent[]
 }
 
 export function Sidebar({
@@ -30,6 +34,11 @@ export function Sidebar({
   hiddenLineIds,
   onToggleLine,
   selectedStation,
+  selectedTrain,
+  isFollowing,
+  onStopFollowing,
+  networkHealth,
+  events,
 }: SidebarProps) {
   const statusMessage = topologyError
     ? `Topology load failed: ${topologyError}`
@@ -39,23 +48,30 @@ export function Sidebar({
 
   return (
     <div id="sidebar">
-      <h1>Tashkent Metro — Live</h1>
-      <div className="subtitle">Simulated train positions over OSM-derived topology</div>
+      <Header wsStatus={wsStatus} />
 
       <div id="status" style={{ color: topologyError ? '#e26a6a' : undefined }}>
         {statusMessage}
       </div>
 
-      <div className="ws-status">
-        <span className={`ws-dot ws-dot-${wsStatus}`} />
-        {WS_STATUS_LABEL[wsStatus]}
-      </div>
-
       <StatsBar lineCount={lines.length} stationCount={stationCount} trainCount={trainCount} />
+
+      <NetworkHealth delayedCount={networkHealth.delayedCount} cancelledCount={networkHealth.cancelledCount} />
 
       <Legend lines={lines} hiddenLineIds={hiddenLineIds} onToggle={onToggleLine} />
 
-      <StationDetail station={selectedStation} lines={lines} />
+      <ActivityTicker events={events} lines={lines} />
+
+      {selectedTrain ? (
+        <TrainDetail
+          train={selectedTrain}
+          lines={lines}
+          isFollowing={isFollowing}
+          onStopFollowing={onStopFollowing}
+        />
+      ) : (
+        <StationDetail station={selectedStation} lines={lines} />
+      )}
     </div>
   )
 }

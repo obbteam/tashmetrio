@@ -2,9 +2,7 @@ from collections import defaultdict
 from uuid import UUID
 
 from geojson_pydantic import LineString, Point
-from shapely import wkb
 from sqlalchemy import func, or_, select
-
 from src.adapters.common.database_session import IDatabaseSession
 from src.adapters.common.models import Lines, LineStations, Stations
 from src.core.common.enums import Direction

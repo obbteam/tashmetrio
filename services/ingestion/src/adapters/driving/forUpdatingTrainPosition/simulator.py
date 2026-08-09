@@ -1,12 +1,11 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import sqrt
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from dishka import FromDishka
 from sqlalchemy import select
-
 from src.adapters.common.database_session import IDatabaseSession
 from src.adapters.common.models import Lines, LineStations, Trips
 from src.core.common.models.trip import Trip
@@ -36,13 +35,24 @@ class Simulator:
 
             for t in trips:
                 try:
-                    elapsed_time = datetime.now(tz=ZoneInfo("UTC")) - t.current_segment_time
+                    elapsed_time = (
+                        datetime.now(tz=ZoneInfo("UTC")) - t.current_segment_time
+                    )
 
                     v_max, a = await self._get_train_speed(line_id=t.line_id)
                     distance = await self._get_segment_length(
                         current_segment_id=t.current_segment_id
                     )
-                    
+
+                    if distance is None:
+                        await self._for_updating_train_position.update(
+                            new_train_position=TrainPosition(
+                                trip_id=t.id,
+                                segment_progress_pct=100,
+                            )
+                        )
+                        continue
+
                     progress = (
                         self._apply_trapezoidal_velocity(
                             t=elapsed_time.seconds, v_max=v_max, a=a, distance=distance
@@ -59,8 +69,7 @@ class Simulator:
                 except Exception as exc:
                     print(f"[error] {exc}")
                     continue
-            
-            
+
             print(f"[info] Now sleep for {settings.SIMULATOR_SLEEP_TIME_S}...")
 
             await asyncio.sleep(settings.SIMULATOR_SLEEP_TIME_S)
@@ -96,7 +105,7 @@ class Simulator:
 
             return (float(max_speed), float(max_accel))
 
-    async def _get_segment_length(self, current_segment_id: UUID) -> float:
+    async def _get_segment_length(self, current_segment_id: UUID) -> float | None:
         async with self._database_session:
             q = select(LineStations.distance_to_next_m).where(
                 LineStations.id == current_segment_id
@@ -106,13 +115,17 @@ class Simulator:
             result = row.scalar()
 
             if result is None:
-                return settings.DEFAULT_LINE_LENGTH_M
+                return None
 
             return float(result)
 
     def _apply_trapezoidal_velocity(
         self, t: float, v_max: float, a: float, distance: float
     ):
+        t = t - settings.MIN_TIME_AT_STATION_S
+        if t < 0:
+            return 0
+
         a_dec = a - settings.DEFAULT_DECEL_BUFFER
         d_acc = (v_max * v_max) / (2 * a)
         d_dec = (v_max * v_max) / (2 * a_dec)
@@ -123,15 +136,15 @@ class Simulator:
         if d_cruise < 0:
             d_cruise = 0
             v_top = sqrt(distance * a)
-            d_acc = (v_top * v_top) / (2*a)
+            d_acc = (v_top * v_top) / (2 * a)
             d_dec = (v_top * v_top) / (2 * a_dec)
 
         t_acc = v_top / a
         t_cruise = d_cruise / v_top
         t_dec = v_top / a_dec
-        
+
         total_trip_time = t_acc + t_cruise + t_dec
-        
+
         if t <= t_acc:
             return 0.5 * a * t * t
         elif t <= t_acc + t_cruise:

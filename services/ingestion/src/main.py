@@ -1,6 +1,7 @@
 from dishka import Provider, Scope, make_async_container
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.adapters.common.database_session import IDatabaseSession, get_database_session
 from src.adapters.common.unit_of_work import IUnitOfWork, get_unit_of_work
@@ -23,9 +24,22 @@ from src.core.ports.driving.forManagingTopology.for_managing_topology import (
 )
 from src.core.topology_service import TopologyService
 
+origins = [
+    "http://localhost",
+    "http://localhost:5173"
+]
+
 
 def setup_app() -> FastAPI:
     app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.include_router(timetable_router)
     app.include_router(topology_router)
 
